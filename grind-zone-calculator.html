@@ -1,0 +1,2610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pill Popper Grind-Zone Calculator</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+* { box-sizing: border-box; }
+body { font-family: monospace; font-size: 15px; background: #f7f7f7; margin: 0; padding: 0; }
+.page { display: none; }
+.page.active { display: block; }
+
+.nav { background: white; border-bottom: 1px solid #e0e0e0; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+.nav-title { font-size: 1.1em; font-weight: bold; display: flex; align-items: center; gap: 8px; }
+.nav-btn { background: none; border: 1px solid #ccc; border-radius: 6px; padding: 6px 12px; cursor: pointer; font-family: monospace; font-size: 0.9em; }
+.nav-btn:hover { background: #f0f0f0; }
+.back-btn { border-color: #c070e8; color: #c070e8; }
+
+body.dark { background: #1a1a1a; color: #e0e0e0; }
+body.dark .nav { background: #222; border-color: #333; }
+body.dark .nav-btn { border-color: #444; color: #ccc; }
+body.dark .nav-btn:hover { background: #333; }
+body.dark .card { background: #252525; border-color: #333; }
+body.dark .zone-body { background: #1e1e1e !important; border-color: #444; color: #ccc; }
+body.dark .zone-body li { color: #ccc; }
+body.dark .zone-tagline { color: #aaa !important; }
+body.dark input[type=time] { background: #333; color: #e0e0e0; border-color: #555; }
+body.dark .tab-btn { background: #2a2a2a; border-color: #444; color: #aaa; }
+body.dark .section-label { color: #666; }
+body.dark .tl-wrap { background: #222; border-color: #333; }
+body.dark p { color: #bbb; }
+body.dark .drug-card { background: #252525; border-color: #444; }
+body.dark .drug-card-sub { color: #777; }
+body.dark .readme-body p, body.dark .readme-body li { color: #bbb; }
+body.dark .share-url { background: #2a2a2a; border-color: #555; color: #ccc; }
+body.dark .zone-sub { color: #999 !important; }
+body.dark #nowBanner { color: #e0e0e0; }
+
+.content { max-width: 640px; margin: 0 auto; padding: 14px 16px; }
+.card { background: white; border: 1px solid #e0e0e0; border-radius: 10px; padding: 14px 16px; margin-bottom: 12px; }
+
+.tab-bar { display: flex; gap: 6px; margin: 0 0 12px 0; flex-wrap: wrap; }
+.tab-btn { padding: 7px 14px; border: 1px solid #ccc; border-radius: 20px; cursor: pointer; font-family: monospace; font-size: 0.88em; background: #f5f5f5; color: #777; transition: all 0.15s; }
+.tab-btn.r.active { background: #fdeeff; border-color: #c070e8; color: #7a1fa0; font-weight: bold; }
+.tab-btn.w.active { background: #eef1ff; border-color: #6080dd; color: #2d4fa6; font-weight: bold; }
+.tab-btn.l.active { background: #eefff4; border-color: #50c080; color: #1a6640; font-weight: bold; }
+.tab-btn.c.active { background: #fff3ee; border-color: #e07030; color: #b04010; font-weight: bold; }
+.tab-btn.rm.active { background: #eef5ff; border-color: #2080c0; color: #0050a0; font-weight: bold; }
+.tab-btn.combo { border-style: dashed; }
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number] { -moz-appearance: textfield; }
+.tab-btn.combo.active { background: #f0eeff; border-color: #5060c0; color: #3040a0; font-weight: bold; border-style: solid; }
+.tab-btn.lx.active { background: #fff4ec; border-color: #d06820; color: #a04010; font-weight: bold; }
+.drug-card.lx.sel { border-color: #d06820; background: #fff4ec; }
+.dose-selector { display:flex; gap:5px; flex-wrap:wrap; margin-bottom:10px; }
+.dose-btn { padding:4px 10px; border-radius:16px; border:1px solid #ccc; background:#f9f9f9; font-size:0.82em; cursor:pointer; font-family:monospace; color:#666; transition:all 0.15s; }
+.dose-btn.sel { font-weight:bold; }
+.dose-note { font-size:0.78em; color:#888; margin-bottom:8px; line-height:1.4; }
+
+.zone-row { margin-bottom: 7px; border-radius: 7px; overflow: hidden; }
+.zone-hdr { padding: 11px 13px; cursor: pointer; user-select: none; display: flex; justify-content: space-between; align-items: center; }
+.zone-hdr:active { opacity: 0.85; }
+.zone-title { font-size: 1.15em; letter-spacing: 0.01em; }
+.zone-sub { font-size: 0.88em; color: #555; margin-top: 2px; }
+.zone-arrow { font-size: 0.85em; color: #888; margin-left: 8px; flex-shrink: 0; }
+.zone-body { display: none; padding: 9px 13px; border-top: 1px solid rgba(0,0,0,0.07); background: white; }
+.zone-body ul { margin: 3px 0; padding-left: 16px; }
+.zone-body li { margin-bottom: 4px; line-height: 1.5; font-size: 0.95em; }
+.zone-tagline { font-style: italic; color: #666; margin-top: 6px; font-size: 0.9em; }
+.you-are-here { font-size: 0.74em; color: #555; margin-top: 3px; font-weight: bold; }
+
+.tl-wrap { background: white; border: 1px solid #e0e0e0; border-radius: 9px; padding: 11px 13px; margin-bottom: 12px; overflow: hidden; }
+.tl-label { font-size: 0.78em; color: #888; margin-bottom: 6px; }
+.tl-rows { position: relative; }
+.tl-row { display: flex; height: 22px; border-radius: 3px; overflow: hidden; margin-bottom: 2px; }
+.tl-seg { height: 100%; display: flex; align-items: center; justify-content: center; font-size: 0.65em; overflow: hidden; white-space: nowrap; color: rgba(0,0,0,0.45); font-weight: bold; }
+.tl-ticks { display: flex; position: relative; margin-top: 4px; font-size: 0.7em; color: #999; height: 12px; }
+.tl-now { position: absolute; top: 0; width: 2px; background: #333; pointer-events: none; border-radius: 1px; }
+body.dark .tl-now { background: #ccc; }
+
+.now-banner { border-radius: 8px; padding: 10px 13px; margin-bottom: 12px; border: 1px solid rgba(0,0,0,0.12); }
+
+.section-label { font-size: 0.75em; color: #aaa; text-transform: uppercase; letter-spacing: 0.08em; margin: 14px 0 6px 0; }
+
+.reverse-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
+.reverse-result { font-style: italic; font-size: 0.88em; margin-top: 1px; margin-bottom: 6px; }
+
+.drug-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+.drug-card { border: 2px solid #ddd; border-radius: 10px; padding: 13px; cursor: pointer; background: white; transition: all 0.15s; display: flex; align-items: center; gap: 10px; }
+.drug-card.r.sel { border-color: #c070e8; background: #fdeeff; }
+.drug-card.w.sel { border-color: #6080dd; background: #eef1ff; }
+.drug-card.l.sel { border-color: #50c080; background: #eefff4; }
+.drug-card.c.sel { border-color: #e07030; background: #fff3ee; }
+.drug-card.rm.sel { border-color: #2080c0; background: #eef5ff; }
+.drug-card-name { font-weight: bold; font-size: 0.92em; }
+.drug-card-sub { font-size: 0.78em; color: #888; margin-top: 2px; }
+.dcheck { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #ccc; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 0.7em; }
+
+.readme-body h3 { margin: 16px 0 5px 0; font-size: 0.98em; }
+.readme-body p, .readme-body li { font-size: 0.93em; line-height: 1.6; color: #444; }
+.share-url { width: 100%; padding: 8px; font-family: monospace; font-size: 0.85em; border: 1px solid #ccc; border-radius: 6px; background: #f9f9f9; margin: 6px 0; }
+.copy-btn { padding: 7px 14px; cursor: pointer; font-family: monospace; border: 1px solid #ccc; border-radius: 6px; background: #f5f5f5; }
+.copy-btn:hover { background: #e5e5e5; }
+
+
+
+
+/* COMBO INTERACTION PANEL */
+.combo-panel { border-radius:10px; padding:14px 15px; margin-top:10px; border:2px solid; position:relative; }
+.combo-equation { display:flex; align-items:center; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
+.combo-drug-pill { padding:4px 10px; border-radius:20px; font-size:0.8em; font-weight:bold; border:1px solid; }
+.combo-op { font-size:1.1em; color:#aaa; font-weight:bold; }
+.combo-result { padding:5px 12px; border-radius:20px; font-size:0.85em; font-weight:bold; }
+.combo-row { display:flex; align-items:flex-start; gap:8px; margin-bottom:8px; font-size:0.85em; }
+.combo-row-icon { flex-shrink:0; width:18px; text-align:center; }
+.combo-row-text { flex:1; line-height:1.4; color:#444; }
+.combo-row-text strong { color:#333; }
+.combo-phase-header { font-size:0.72em; text-transform:uppercase; letter-spacing:0.07em; color:#aaa; margin:10px 0 6px 0; }
+.combo-badge { display:inline-block; padding:2px 7px; border-radius:10px; font-size:0.75em; font-weight:bold; margin-left:5px; }
+
+/* CALENDAR STRIP */
+.cal-strip { display:flex; gap:5px; overflow-x:auto; padding-bottom:4px; }
+.cal-day { flex-shrink:0; width:44px; text-align:center; cursor:pointer; border-radius:8px; padding:5px 2px; border:1px solid transparent; transition:all 0.15s; }
+.cal-day:hover { background:#f5f5f5; }
+.cal-day.active { border-color:#c070e8; background:#fdeeff; }
+.cal-day.today { font-weight:bold; }
+.cal-day-label { font-size:0.7em; color:#aaa; }
+.cal-day-num { font-size:1.05em; margin:2px 0; }
+.cal-day-dot { height:6px; display:flex; gap:2px; justify-content:center; align-items:center; }
+.cal-dot { width:6px; height:6px; border-radius:50%; }
+.cal-day-avg { font-size:0.68em; margin-top:2px; font-weight:bold; }
+
+/* DAY GROUP */
+.day-group { margin-bottom:14px; }
+.day-group-header { display:flex; justify-content:space-between; align-items:center; cursor:pointer; padding:7px 11px; background:#f5f5f5; border-radius:7px; user-select:none; margin-bottom:5px; }
+.day-group-header:hover { background:#eee; }
+.day-group-title { font-weight:bold; font-size:0.9em; }
+.day-group-meta { font-size:0.78em; color:#888; }
+.day-group-arrow { color:#aaa; font-size:0.8em; }
+.day-group-body { }
+
+/* CYCLE GROUP */
+.cycle-group { margin-bottom:14px; }
+.cycle-group-header { display:flex; justify-content:space-between; align-items:center; cursor:pointer; padding:7px 11px; border-radius:7px; user-select:none; margin-bottom:5px; border-left:4px solid; }
+.cycle-group-title { font-weight:bold; font-size:0.88em; }
+.cycle-group-meta { font-size:0.75em; color:#666; }
+
+/* DOSE SCHEDULE IN DAY */
+.dose-schedule { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; padding:6px 10px; background:#fafafa; border-radius:6px; border:1px solid #eee; }
+.dose-pill-badge { font-size:0.75em; padding:3px 8px; border-radius:10px; border:1px solid; }
+
+/* AUTH */
+.auth-wrap { max-width: 380px; margin: 60px auto; padding: 0 20px; text-align: center; }
+.auth-wrap h2 { margin: 0 0 8px 0; font-size: 1.3em; }
+.auth-wrap p { color: #888; font-size: 0.9em; margin: 0 0 24px 0; }
+.auth-input { width: 100%; padding: 11px 14px; font-size: 1em; font-family: monospace; border: 1px solid #ccc; border-radius: 8px; margin-bottom: 10px; }
+.auth-btn { width: 100%; padding: 12px; font-size: 1em; font-family: monospace; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; background: #c070e8; color: white; transition: opacity 0.15s; }
+.auth-btn:hover { opacity: 0.88; }
+.auth-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+input[type=number] { -moz-appearance: textfield; }
+.auth-msg { font-size: 0.88em; margin-top: 10px; min-height: 20px; }
+.auth-divider { color: #ccc; margin: 16px 0; font-size: 0.85em; }
+.user-pill { font-size: 0.78em; color: #888; background: #f5f5f5; border: 1px solid #eee; border-radius: 20px; padding: 3px 10px; cursor: pointer; }
+.user-pill:hover { background: #eee; }
+
+/* LOG SYSTEM */
+.log-btn { width:100%; padding:11px; border:none; border-radius:8px; cursor:pointer; font-family:monospace; font-size:1em; font-weight:bold; margin-bottom:12px; transition:opacity 0.15s; }
+.log-btn:active { opacity:0.8; }
+.log-modal-bg { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:200; align-items:flex-end; justify-content:center; }
+.log-modal-bg.open { display:flex; }
+.log-modal { background:white; border-radius:14px 14px 0 0; padding:20px 18px 32px; width:100%; max-width:640px; animation:slideup 0.22s ease; }
+body.dark .log-modal { background:#222; color:#e0e0e0; }
+@keyframes slideup { from { transform:translateY(100px); opacity:0; } to { transform:translateY(0); opacity:1; } }
+.log-modal h3 { margin:0 0 14px 0; font-size:1.05em; }
+.feel-scale { display:flex; gap:5px; margin:8px 0 14px 0; flex-wrap:wrap; }
+.feel-btn { flex:1; min-width:30px; padding:9px 4px; border:1px solid #ddd; border-radius:6px; cursor:pointer; font-family:monospace; font-size:0.9em; text-align:center; background:#f9f9f9; transition:all 0.12s; }
+.feel-btn.sel { border-width:2px; font-weight:bold; }
+.feel-btn:hover { background:#f0f0f0; }
+body.dark .feel-btn { background:#2a2a2a; border-color:#444; color:#ddd; }
+body.dark .feel-btn:hover { background:#333; }
+.tag-row { display:flex; gap:6px; flex-wrap:wrap; margin:0 0 12px 0; }
+.tag-btn { padding:5px 10px; border:1px solid #ccc; border-radius:20px; cursor:pointer; font-size:0.82em; font-family:monospace; background:#f5f5f5; transition:all 0.12s; }
+.tag-btn.sel { border-width:2px; font-weight:bold; }
+body.dark .tag-btn { background:#2a2a2a; border-color:#444; color:#ddd; }
+.log-note { width:100%; padding:8px 10px; border:1px solid #ddd; border-radius:6px; font-family:monospace; font-size:0.93em; resize:none; margin-bottom:12px; }
+body.dark .log-note { background:#2a2a2a; border-color:#444; color:#e0e0e0; }
+.save-log-btn { width:100%; padding:11px; border:none; border-radius:8px; cursor:pointer; font-family:monospace; font-size:1em; font-weight:bold; color:white; }
+.cancel-log-btn { width:100%; padding:9px; border:1px solid #ccc; border-radius:8px; cursor:pointer; font-family:monospace; font-size:0.9em; margin-top:8px; background:none; }
+body.dark .cancel-log-btn { border-color:#555; color:#ccc; }
+
+/* LOG HISTORY */
+.log-entry { padding:10px 13px; border-radius:7px; margin-bottom:7px; border-left:4px solid #ccc; background:white; }
+body.dark .log-entry { background:#252525; }
+.log-entry-header { display:flex; justify-content:space-between; align-items:flex-start; }
+.log-entry-time { font-size:0.8em; color:#888; }
+.log-entry-feel { font-size:1.1em; font-weight:bold; }
+.log-entry-zone { font-size:0.8em; color:#888; margin-top:2px; }
+.log-entry-tags { display:flex; gap:4px; flex-wrap:wrap; margin-top:5px; }
+.log-tag { padding:2px 7px; border-radius:10px; font-size:0.75em; background:#f0f0f0; }
+body.dark .log-tag { background:#333; color:#ccc; }
+.log-entry-note { font-size:0.87em; color:#555; margin-top:5px; font-style:italic; }
+body.dark .log-entry-note { color:#aaa; }
+.del-log { font-size:0.75em; color:#bbb; cursor:pointer; padding:2px 4px; }
+.del-log:hover { color:#e00; }
+
+/* PERSONAL CURVE overlay dots on timeline */
+.tl-dot { position:absolute; width:8px; height:8px; border-radius:50%; border:2px solid white; transform:translate(-50%,-50%); top:50%; pointer-events:none; }
+
+/* ADAPTIVE NOTE */
+.adaptive-note { font-size:0.82em; border-radius:5px; padding:5px 8px; margin-top:6px; border-left:3px solid; }
+
+/* ADAPTIVE PEAKS */
+.adaptive-peak-banner { border-radius:7px; padding:9px 13px; margin-bottom:10px; border:1px solid; font-size:0.88em; }
+.adaptive-peak-banner b { font-size:1em; }
+.zone-adjusted { position:relative; }
+.zone-adjusted::after { content:'👤'; position:absolute; top:8px; right:36px; font-size:0.8em; opacity:0.7; }
+.personal-curve-note { font-size:0.8em; padding:5px 8px; border-radius:5px; margin-top:5px; border-left:3px solid #c070e8; background:#fdeeff; color:#7a1fa0; }
+.reset-adaptive { font-size:0.75em; color:#bbb; cursor:pointer; text-decoration:underline; margin-left:8px; }
+.reset-adaptive:hover { color:#e05050; }
+
+body.dark .adaptive-note { color:#bbb; }
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <div class="nav-title" onclick="goPage('main')" style="cursor:pointer;>
+    <svg id="pill-icon" width="30" height="17" viewBox="0 0 28 16">
+      <rect x="0" y="0" width="28" height="16" rx="8" fill="#c070e8"/>
+      <rect x="14" y="0" width="14" height="16" rx="0" fill="#e0a8f8"/>
+      <rect x="20" y="0" width="8" height="16" rx="8" fill="#e0a8f8"/>
+      <line x1="14" y1="1" x2="14" y2="15" stroke="white" stroke-width="1.5"/>
+      <circle cx="9" cy="6.5" r="1.2" fill="white"/>
+      <circle cx="13" cy="6.5" r="1.2" fill="white"/>
+      <circle cx="9.3" cy="6.8" r="0.55" fill="#7a1fa0"/>
+      <circle cx="13.3" cy="6.8" r="0.55" fill="#7a1fa0"/>
+      <ellipse cx="7" cy="9.5" rx="1.5" ry="0.8" fill="#f0c8ff" opacity="0.7"/>
+      <ellipse cx="15" cy="9.5" rx="1.5" ry="0.8" fill="#f0c8ff" opacity="0.7"/>
+      <path d="M8.5 9.5 Q11 12 13.5 9.5" stroke="white" stroke-width="1" fill="none" stroke-linecap="round"/>
+    </svg>
+    Grind-Zone
+  </div>
+  <div style="display:flex;gap:6px;">
+    <button class="nav-btn" onclick="togglePage('log')">📓 Log</button>
+    <button class="nav-btn" onclick="togglePage('drugs')">⚙ Meds</button>
+    <button class="nav-btn" onclick="togglePage('readme')">ℹ</button>
+    <button class="nav-btn" onclick="toggleDark()" id="darkBtn">🌙</button>
+    <span class="user-pill" id="userPill" style="display:none;" onclick="handleSignOut()">···</span>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="page active" id="page-main">
+<div class="content">
+  <div class="section-label">My medications</div>
+  <div class="tab-bar" id="mainTabs"></div>
+  <div id="nowBanner" style="display:none;"></div>
+  <div id="logBtnWrap"></div>
+  <div class="tl-wrap" id="tlWrap" style="display:none;">
+    <div class="tl-label" id="tlLabel"></div>
+    <div class="tl-rows" id="tlRows">
+      <div id="tlNow" class="tl-now" style="display:none;"></div>
+    </div>
+    <div class="tl-ticks" id="tlTicks"></div>
+  </div>
+  <div class="card" id="inputCard">
+    <div id="doseArea"></div>
+    <div id="revArea"></div>
+  </div>
+  <div id="zonesOut"></div>
+</div>
+</div>
+
+
+<!-- LOG MODAL -->
+<div class="log-modal-bg" id="logModalBg" onclick="closeLogModal(event)">
+  <div class="log-modal" id="logModal">
+    <h3 id="logModalTitle">How are you feeling?</h3>
+    <div style="font-size:0.82em;color:#888;margin-bottom:10px;" id="logModalContext"></div>
+
+    <div style="font-size:0.85em;margin-bottom:4px;">Feeling (1–10):</div>
+    <div class="feel-scale" id="feelScale"></div>
+
+    <div style="font-size:0.85em;margin-bottom:6px;">Tags (tap to add):</div>
+    <div class="tag-row" id="tagRow"></div>
+
+    <textarea class="log-note" id="logNoteInput" rows="2" placeholder="Optional note..."></textarea>
+
+    <div style="font-size:0.82em;color:#888;margin-bottom:6px;">Log time:</div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+      <input type="time" id="logTimeInput" style="font-size:1em;padding:7px;border:1px solid #ccc;border-radius:6px;font-family:monospace;" oninput="document.getElementById('logTimeDisplay').textContent=to12(this.value)">
+      <span id="logTimeDisplay" style="font-size:1.05em;color:#555;min-width:80px;"></span>
+    </div>
+
+    <button class="save-log-btn" id="saveLogBtn" onclick="saveLog()">Save entry</button>
+    <button class="cancel-log-btn" onclick="closeLogModal()">Cancel</button>
+  </div>
+</div>
+
+<!-- LOG PAGE -->
+<div class="page" id="page-log">
+<div class="content">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+    <h2 style="margin:0;font-size:1.2em;">Feeling Log</h2>
+    <div style="display:flex;gap:6px;">
+      <button class="nav-btn" id="exportLogBtn" onclick="exportLog()">⬇ Export</button>
+      <button class="nav-btn back-btn" onclick="goPage('main')">← Back</button>
+    </div>
+  </div>
+
+  <button class="log-btn" id="logPageBtn" style="margin-bottom:12px;" onclick="openLogModalFrom('log')">+ Log how I feel right now</button>
+
+  <!-- Drug filter tabs -->
+  <div class="tab-bar" id="logDrugTabs"></div>
+
+  <!-- Stats summary -->
+  <div id="logStats" style="margin-bottom:12px;"></div>
+
+  <!-- Calendar strip -->
+  <div id="calendarStrip" style="margin-bottom:14px;"></div>
+
+  <!-- View mode + filter bar -->
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+    <div style="display:flex;border:1px solid #ddd;border-radius:6px;overflow:hidden;">
+      <button id="viewByDay" onclick="setLogView('day')" style="padding:5px 11px;border:none;cursor:pointer;font-family:monospace;font-size:0.82em;background:#f0e8ff;color:#7a1fa0;font-weight:bold;">By day</button>
+      <button id="viewByCycle" onclick="setLogView('cycle')" style="padding:5px 11px;border:none;cursor:pointer;font-family:monospace;font-size:0.82em;background:#f5f5f5;color:#888;">By cycle</button>
+    </div>
+    <div style="flex:1;min-width:120px;">
+      <select id="logFilter" onchange="renderLogList()" style="width:100%;padding:5px 8px;border:1px solid #ddd;border-radius:6px;font-family:monospace;font-size:0.82em;background:white;">
+        <option value="all">All entries</option>
+        <option value="high">Feeling high (7+)</option>
+        <option value="mid">Feeling mid (4–6)</option>
+        <option value="low">Feeling low (1–3)</option>
+        <option value="tagged">Has tags</option>
+        <option value="noted">Has notes</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Log list -->
+  <div id="logList"></div>
+  <div id="logEmpty" style="color:#aaa;font-size:0.9em;text-align:center;padding:30px 0;display:none;">No entries yet.<br>Tap the button above to add your first.</div>
+</div>
+</div>
+
+
+<!-- AUTH PAGE -->
+<div class="page" id="page-auth">
+  <div class="auth-wrap">
+    <div style="margin-bottom:14px;display:flex;align-items:center;justify-content:center;gap:10px;">
+      <svg width="72" height="41" viewBox="0 0 28 16" xmlns="http://www.w3.org/2000/svg">
+        <rect x="0" y="0" width="28" height="16" rx="8" fill="#c070e8"/>
+        <rect x="14" y="0" width="14" height="16" rx="0" fill="#e0a8f8"/>
+        <rect x="20" y="0" width="8" height="16" rx="8" fill="#e0a8f8"/>
+        <line x1="14" y1="1" x2="14" y2="15" stroke="white" stroke-width="1.5"/>
+        <circle cx="9" cy="6.5" r="1.2" fill="white"/>
+        <circle cx="13" cy="6.5" r="1.2" fill="white"/>
+        <circle cx="9.3" cy="6.8" r="0.55" fill="#7a1fa0"/>
+        <circle cx="13.3" cy="6.8" r="0.55" fill="#7a1fa0"/>
+        <ellipse cx="7" cy="9.5" rx="1.5" ry="0.8" fill="#f0c8ff" opacity="0.7"/>
+        <ellipse cx="15" cy="9.5" rx="1.5" ry="0.8" fill="#f0c8ff" opacity="0.7"/>
+        <path d="M8.5 9.5 Q11 12 13.5 9.5" stroke="white" stroke-width="1" fill="none" stroke-linecap="round"/>
+      </svg>
+      <h2 style="margin:0;font-size:1.6em;">Grind-Zone</h2>
+    </div>
+    <!-- Step 1: email -->
+    <div id="authStep1">
+      <p style="color:#888;font-size:0.9em;margin:0 0 16px 0;">Sign in to sync your logs across devices.</p>
+      <input class="auth-input" type="email" id="authEmail" placeholder="your@email.com"
+        onkeydown="if(event.key==='Enter') sendCode()">
+      <button class="auth-btn" id="authBtn" onclick="sendCode()">Track my stats</button>
+      <div class="auth-msg" id="authMsg"></div>
+      <div class="auth-divider">— or —</div>
+      <button class="auth-btn" style="background:#f5f5f5;color:#666;border:1px solid #ddd;" onclick="continueAsGuest()">Continue without account</button>
+      <p style="margin-top:16px;font-size:0.75em;color:#bbb;">A 6-digit code will be sent to your email.</p>
+    </div>
+
+    <!-- Step 2: enter code -->
+    <div id="authStep2" style="display:none;">
+      <p style="color:#555;font-size:0.92em;margin:0 0 4px 0;">Check your email for a 6-digit code.</p>
+      <p id="authCodeEmail" style="color:#c070e8;font-size:0.88em;font-weight:bold;margin:0 0 16px 0;"></p>
+      <input class="auth-input" type="number" id="authCode" placeholder="123456"
+        style="font-size:1.6em;text-align:center;letter-spacing:0.15em;"
+        onkeydown="if(event.key==='Enter') verifyCode()"
+        oninput="if(this.value.length>=6) verifyCode()">
+      <button class="auth-btn" id="verifyBtn" onclick="verifyCode()" style="margin-top:8px;">Verify</button>
+      <div class="auth-msg" id="authMsg2"></div>
+      <div style="margin-top:14px;display:flex;justify-content:space-between;font-size:0.82em;">
+        <span style="color:#aaa;cursor:pointer;" onclick="backToEmail()">← Different email</span>
+        <span style="color:#c070e8;cursor:pointer;" onclick="resendCode()">Resend code</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MED SELECT -->
+<div class="page" id="page-drugs">
+<div class="content">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+    <h2 style="margin:0;font-size:1.2em;">My Medications</h2>
+    <button class="nav-btn back-btn" onclick="goPage('main')">← Back</button>
+  </div>
+  <p style="color:#888;font-size:0.88em;margin:0 0 10px 0;">Choose which medications to show on your dashboard.</p>
+  <div class="drug-grid" id="drugGrid"></div>
+  <button class="nav-btn" style="width:100%;margin-top:10px;padding:11px;" onclick="goPage('main')">Done</button>
+</div>
+</div>
+
+<!-- README -->
+<div class="page" id="page-readme">
+<div class="content">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+    <h2 style="margin:0;font-size:1.2em;">About</h2>
+    <button class="nav-btn back-btn" onclick="goPage('main')">← Back</button>
+  </div>
+  <div class="readme-body">
+
+    <h3>What is this?</h3>
+    <p>Grind-Zone is a medication timing and mood tracking tool built around real pharmacokinetic data. Enter when you took your pill — see exactly what zone you're in, when your peak hits, and when things wind down. Log how you feel throughout the day and the app slowly learns your personal timing.</p>
+
+    <h3>Why it exists</h3>
+    <p>Built for personal use. Couldn't find anything that actually explained what was happening in your brain at 2pm vs 8am, or what Wellbutrin and Remeron are doing to each other when both are active. So this got built instead.</p>
+
+    <h3>Medications covered</h3>
+    <ul>
+      <li><strong>Ritalin LA</strong> — stimulant, bimodal release (IR + delayed beads), two distinct peaks, ~10hr window</li>
+      <li><strong>Concerta 27mg</strong> — stimulant, OROS osmotic pump, continuously ascending curve, peak at 6–9hrs</li>
+      <li><strong>Wellbutrin XL</strong> — NDRI antidepressant, long single arc, peak zone 5–14hrs, 21hr half-life</li>
+      <li><strong>Lamictal 50mg</strong> — mood stabilizer, sodium channel blocker, 29hr half-life, cumulative therapeutic effect</li>
+      <li><strong>Remeron 7.5mg</strong> — NaSSA antidepressant/sleep aid, peak sedation at ~2hrs, half-life adjusted for biological sex (26hr male / 37hr female)</li>
+    </ul>
+
+    <h3>Combination tracking</h3>
+    <p>When Wellbutrin and Remeron are both active, the app detects the interaction state and shows a live <strong>⚗️ x + y = z</strong> panel — what the two drugs are doing to each other right now, which neurotransmitters are elevated, what to expect, and what to watch for. Based on published pharmacodynamics research including Blier 2010 (46% vs 25% remission RCT) and mirtazapine α2 blockade mechanisms. Logs made during combo state are attributed to the combo, not either drug individually.</p>
+
+    <h3>Feeling log + adaptive calibration</h3>
+    <p>Log how you feel (1–10) at any point in the day. After 6 entries with elapsed time data, the app starts calibrating your personal peak timing — using exponential decay weighting (recent entries count more), a pharmacokinetic anchor prior (defaults resist change until real data outweighs them), and per-drug shift ceilings based on published Tmax variability ranges (±2hr for Ritalin/Concerta/Wellbutrin, ±1.5hr for Lamictal/Remeron). Zone boundaries, the now-banner, and the timeline all update to reflect your data.</p>
+
+    <h3>Log organization</h3>
+    <p>Logs are grouped by day (3am rollover — late nights stay with the right day) or by cycle phase. A 30-day calendar strip shows feel score dots per day. Filter by feel level, tags, or notes. The day view shows your dose schedule as badges. The cycle view groups by zone — useful for seeing patterns like "I always score low during Trough."</p>
+
+    <h3>Accounts + sync</h3>
+    <p>Sign in with a magic link (no password). Logs sync to a private Postgres database via Supabase — Row Level Security enforced at the database level, not just app code. Dose times stay local (localStorage) since they're session-specific. Guest mode available — logs stay in browser only.</p>
+
+    <h3>Technical notes</h3>
+    <ul>
+      <li>Single HTML file — no framework, no build step, no dependencies</li>
+      <li>Backend: Supabase (Postgres + Auth)</li>
+      <li>Adaptive algorithm: weighted histogram, exponential decay, pharmacokinetic prior, per-drug Tmax ceiling</li>
+      <li>Day boundary: 3am rollover — doses clear automatically, new day starts fresh</li>
+      <li>30-second live ticker for zone updates</li>
+      <li>Shareable URL — encodes your dose schedule as query params</li>
+    </ul>
+
+    <h3>Disclaimer</h3>
+    <p>Not medical advice. Pharmacokinetic timings are based on published data and vary between individuals. Adaptive calibration reflects your logged experience, not clinical guidance. Always follow your prescriber's instructions.</p>
+
+    <h3>Share your schedule</h3>
+    <input class="share-url" id="shareUrl" readonly>
+    <button class="copy-btn" onclick="copyShare()">Copy link</button>
+    <div id="copyConfirm" style="font-size:0.83em;color:green;margin-top:4px;display:none;">✓ Copied!</div>
+
+  </div>
+</div>
+</div>
+
+<script>
+// ─── DATA ─────────────────────────────────────────────────────────────────────
+const DRUGS = {
+  ritalin: {
+    name:'Ritalin LA', short:'Ritalin', cls:'r', color:'#c070e8', light:'#fdeeff',
+    rev:[
+      {lbl:'Want First Peak at:', off:1.5, desc:'First Peak', id:'rv-r1'},
+      {lbl:'Want Second Peak at:', off:5, desc:'Second Peak', id:'rv-r2'}
+    ],
+    zones:[
+      {start:0,end:1,label:"Onset",power:"2–3 / 10",tl:'#e8cfff',
+       notes:["IR beads (50% of dose) beginning to dissolve","No dopamine or norepinephrine activity yet","Some feel a faint shift within 30 min — others nothing","Appetite suppression often starts before mental effects","Don't judge the medication here"],tag:"First pulse loading up."},
+      {start:1,end:2,label:"First Peak ⭐",power:"7–8 / 10",peak:true,tl:'#9b30d8',
+       notes:["IR beads fully absorbed — blood level at first peak","Dopamine and norepinephrine reuptake blocked most strongly","Focus sharpens noticeably — hard tasks feel easier to start","Internal 'I'll do it later' resistance drops significantly","Best window for demanding creative or cognitive work","Heart rate gently elevated — normal and expected"],tag:"First wave of cognitive horsepower."},
+      {start:2,end:4,label:"Trough",power:"4–6 / 10",tl:'#ddb8f0',
+       notes:["IR dose metabolized, delayed beads not yet released","Focus dips noticeably — pharmacologically normal for LA","Not a crash — just the valley between two distinct pulses","Best for: breaks, food, emails, low-intensity tasks","Some people feel this more than others — ride it out"],tag:"Pause between waves — hold steady."},
+      {start:4,end:6,label:"Second Peak ⭐",power:"7–8 / 10",second:true,tl:'#b040e8',
+       notes:["Delayed-release beads (50% of dose) now fully absorbing","Second dopamine/norepinephrine surge — often feels like a fresh dose","Focus rebounds to near-peak levels","Great for afternoon work, studying, or structured tasks","Slightly softer than first peak for most people"],tag:"Second wind. Use it."},
+      {start:6,end:8,label:"Plateau",power:"5–7 / 10",third:true,tl:'#c880e8',
+       notes:["Second peak leveling — still meaningfully active","Sustained focus, less sharp but solid","Good for: review, reading, meetings, routine tasks","Where Ritalin LA outlasts IR — this window doesn't exist on IR","Distractibility slowly returning but manageable"],tag:"LA's lasting advantage over IR."},
+      {start:8,end:10,label:"Taper",power:"3–5 / 10",tl:'#e0c0f0',
+       notes:["Methylphenidate half-life ~2–3 hrs — most drug clearing","Focus requires more active effort now","Better for: review, admin, passive reading","Mood may dip slightly as norepinephrine drops","Avoid caffeine to compensate — tends to worsen comedown"],tag:"Gradual landing."},
+      {start:10,end:Infinity,label:"Baseline",power:"2–3 / 10",tl:'#f0e8ff',
+       notes:["Methylphenidate essentially cleared from system","Your ADHD baseline is returning — this is just your brain","Mental fatigue likely after a long active window","Appetite returns strongly — eat something real","Sleep window open now — drug won't interfere"],tag:"Time to recover. You did the work."}
+    ]
+  },
+  wellbutrin: {
+    name:'Wellbutrin XL', short:'Wellbutrin', cls:'w', color:'#5577d4', light:'#eef1ff',
+    rev:[{lbl:'Want peak at:', off:6, desc:'Peak Zone', id:'rv-w1'}],
+    doses: [
+      {mg:150, label:'150mg', note:'Starting dose — first 1–2 weeks, or long-term if effective'},
+      {mg:300, label:'300mg', note:'Standard therapeutic dose — maintenance for most'},
+      {mg:450, label:'450mg', note:'Max dose — stronger NE/DA, higher seizure risk'},
+    ],
+    zonesByDose: {
+      150: [
+        {start:0,end:2,label:"Absorbing",power:"2–3 / 10",tl:'#d0d8f8',
+         notes:["150mg XL: Tmax ~5hr — XL formulation slows absorption significantly vs IR/SR","Bioavailability 68% for XL — lower than IR but sustained throughout the day","CYP2B6 begins converting bupropion to hydroxybupropion — the primary active metabolite","At 150mg, plasma concentration is approximately half of the 300mg dose","No meaningful NE/DA effect yet — drug still distributing"],tag:"Loading. Drug absorbing before effects begin."},
+        {start:2,end:5,label:"Building",power:"3–5 / 10",tl:'#a0b0e8',third:true,
+         notes:["NE/DA reuptake inhibition beginning as plasma levels rise","At 150mg, the building phase is gentler than 300mg — less likely to feel jittery or anxious","Some report faint increased alertness or slightly elevated mood here","Hydroxybupropion (the key metabolite) still accumulating — full effect builds over days","150mg is the standard starting dose precisely because this curve is tolerable"],tag:"Gentle build. 150mg is the starter for a reason."},
+        {start:5,end:9,label:"Peak Zone ⭐",power:"5–7 / 10",peak:true,tl:'#4055bb',
+         notes:["Tmax ~5hr — plasma concentration at daily maximum for 150mg dose","NE and DA reuptake substantially blocked — focus, motivation, and mood elevated","At 150mg, peak effect is real but moderate — approximately half the plasma of 300mg","Energy increase common: more motivation, easier task initiation, reduced fatigue","Less appetite suppression than 300mg — weight effects milder at this dose","Anxiety risk lower than at higher doses — good first-dose check for CYP2B6 slow metabolizers"],tag:"150mg peak — real effect, moderate intensity."},
+        {start:9,end:16,label:"Active Plateau",power:"4–6 / 10",second:true,tl:'#7088d8',
+         notes:["Hydroxybupropion half-life ~20hr — still highly active well into the afternoon","150mg produces a smoother, flatter plateau than higher doses","Focus and mood remain steady if the dose is working — no sharp drop","At steady state (8 days), the plateau deepens as hydroxybupropion accumulates","Some people find 150mg enough; others need to increase to 300mg for full effect"],tag:"Steady and even. 150mg's big advantage is smoothness."},
+        {start:16,end:24,label:"Taper",power:"2–4 / 10",tl:'#b0b8e8',
+         notes:["Plasma declining but hydroxybupropion still active for hours","At 150mg, evening taper is gentle — unlikely to crash","Half-life ~21hr means drug is still well above zero at next morning's dose","Take next dose in the morning — do not take 150mg after 3pm if sleep-sensitive","Steady-state builds over 8 days — full antidepressant effect takes 4–6 weeks"],tag:"Gentle taper. Next dose tomorrow morning."},
+        {start:24,end:Infinity,label:"Pre-Dose Trough",power:"1–3 / 10",tl:'#d8ddf8',
+         notes:["At 150mg with 21hr half-life, ~40% plasma remaining at 24hrs — non-trivial","Steady-state means drug doesn't fully clear between doses","Pre-dose trough stabilizes after 8 days of consistent dosing","If antidepressant effect feels insufficient at 2–4 weeks, discuss increasing to 300mg with doctor","Do not increase dose without medical guidance — seizure risk is dose-dependent"],tag:"Trough. Tomorrow's dose brings this back up."}
+      ],
+      300: [
+        {start:0,end:2,label:"Absorbing",power:"2–3 / 10",tl:'#d0d8f8',
+         notes:["300mg XL: standard therapeutic dose — Tmax ~5hr for the XL formulation","At 300mg, bioavailability 68% means ~200mg equivalent reaches circulation","CYP2B6 converting bupropion to hydroxybupropion — the metabolite drives much of the antidepressant effect","Hydroxybupropion AUC at 300mg is ~16× that of the parent compound — it is the real active drug","No significant NE/DA effect yet — drug distributing and metabolizing"],tag:"Loading. The real active metabolite building up."},
+        {start:2,end:5,label:"Building",power:"4–6 / 10",tl:'#a0b0e8',third:true,
+         notes:["NE/DA reuptake inhibition increasing as bupropion and hydroxybupropion rise together","At 300mg, this phase is noticeably more activating than 150mg","Increased alertness, possible mild anxiety or jitteriness — especially in weeks 1–2","Metabolism of bupropion is highly variable: same dose can produce 5.5× different plasma in different people","CYP2D6 inhibition by bupropion also begins here — affects other medications metabolized by CYP2D6"],tag:"Active build. 300mg kicks in more noticeably than 150mg."},
+        {start:5,end:9,label:"Peak Zone ⭐",power:"7–8 / 10",peak:true,tl:'#4055bb',
+         notes:["Tmax ~5hr — plasma concentration at daily maximum for 300mg","NE and DA reuptake inhibition at strongest — focus, motivation, and drive most elevated","300mg is where most patients first notice the antidepressant and cognitive effects clearly","Appetite suppression typically strongest in this window — meal timing matters","Best window for cognitively demanding work — NE/DA both elevated, no serotonin sedation","Heart rate and blood pressure slightly elevated — expected, monitor if cardiovascular history"],tag:"Peak. This is what 300mg is built to do."},
+        {start:9,end:16,label:"Active Plateau",power:"6–7 / 10",second:true,tl:'#7088d8',
+         notes:["Hydroxybupropion half-life ~20hr — still highly active well into afternoon","300mg plateau is noticeably stronger and longer than 150mg","Focus and mood stable — no stimulant-style crash","Appetite suppression often persists through this window","Steady state builds over 8 days — full antidepressant effect at 4–6 weeks","Bupropion potently inhibits CYP2D6 — inform all prescribers about this interaction"],tag:"Steady, sustained, reliable. 300mg's defining quality."},
+        {start:16,end:24,label:"Taper",power:"3–5 / 10",tl:'#b0b8e8',
+         notes:["Plasma declining through the evening","At 300mg, some people notice energy taper more than at 150mg","Half-life 21hr — hydroxybupropion still very active through this window","Do NOT take 300mg after 2pm — activating effects will disrupt sleep","If taking 300mg and sleep is impaired, discuss splitting to 150mg twice daily with doctor"],tag:"Tapering. Consistent morning dosing essential."},
+        {start:24,end:Infinity,label:"Pre-Dose Trough",power:"2–4 / 10",tl:'#d8ddf8',
+         notes:["At 300mg with 21hr half-life, significant plasma remains at 24hrs","Steady-state builds over 8 days — pre-dose trough stabilizes","If antidepressant effect plateaus at 300mg after 4–6 weeks, discuss 450mg with doctor","450mg is off-label but used for treatment-resistant cases — seizure risk increases meaningfully","Bupropion has no discontinuation syndrome — but do not stop abruptly if stable"],tag:"Trough. Same time every morning."}
+      ],
+      450: [
+        {start:0,end:2,label:"Absorbing",power:"3–4 / 10",tl:'#d0d8f8',
+         notes:["450mg is the maximum FDA dose and is off-label for most indications beyond smoking cessation","Tmax still ~5hr for XL formulation — same curve, significantly higher peak","At 450mg, plasma and hydroxybupropion levels are 1.5× that of 300mg — meaningful escalation","Seizure risk increases with dose: ~0.1% at 150–300mg, higher at 400–450mg — this is the primary ceiling","450mg is typically only prescribed after confirmed inadequate response at 300mg"],tag:"Maximum dose. Stronger effect, elevated seizure risk."},
+        {start:2,end:5,label:"Building",power:"5–7 / 10",tl:'#a0b0e8',third:true,
+         notes:["450mg building phase noticeably more activating — anxiety, jitteriness, insomnia most likely here","NE/DA reuptake inhibition increasing rapidly toward a higher plateau than 300mg","Appetite suppression typically very strong — some patients cannot eat adequately without effort","CYP2D6 inhibition is more substantial at 450mg — review all concurrent medications carefully","If significant anxiety or tremor in this phase: contact prescriber — 450mg may not be tolerated"],tag:"Strong build. Watch for anxiety or tremor."},
+        {start:5,end:9,label:"Peak Zone ⭐",power:"8–9 / 10",peak:true,tl:'#4055bb',
+         notes:["450mg peak: NE/DA reuptake inhibition at maximum therapeutic intensity","Energy, focus, drive, and motivation all near maximum — stronger than 300mg for most patients","Used for treatment-resistant depression and ADHD where lower doses are insufficient","Blood pressure and heart rate elevation most pronounced in this window — monitor if any cardiac history","Some patients experience peak-dose anxiety, headache, or dry mouth near Tmax","Most patients on 450mg dose at 6am or earlier to prevent sleep disruption"],tag:"Maximum NE/DA effect. Monitor blood pressure."},
+        {start:9,end:16,label:"Active Plateau",power:"7–8 / 10",second:true,tl:'#7088d8',
+         notes:["450mg plateau sustains strong NE/DA effect well into the afternoon","Considerably stronger and more sustained than 300mg plateau","Appetite suppression often all-day at this dose — intentional caloric intake important","CYP2D6 inhibition at 450mg can significantly elevate co-administered medications (SSRIs, TCAs, beta-blockers)","Sustained strong energy — some patients find this dose too activating and prefer 300mg instead"],tag:"Strongest sustained plateau. Very activating."},
+        {start:16,end:24,label:"Taper",power:"4–6 / 10",tl:'#b0b8e8',
+         notes:["Even at 450mg, taper is gradual due to 21hr half-life of hydroxybupropion","Evening energy still noticeably elevated — sleep onset delayed is common","Most patients on 450mg cannot take it after noon — morning dosing essential","If sleep severely impaired at 450mg: discuss with doctor — some split to 300mg AM + 150mg noon","Do not take second dose to compensate for perceived inadequate effect — seizure risk is dose-dependent"],tag:"Evening still activating. Morning dosing critical."},
+        {start:24,end:Infinity,label:"Pre-Dose Trough",power:"3–5 / 10",tl:'#d8ddf8',
+         notes:["At 450mg, pre-dose trough still has substantial drug present due to long half-life","The antidepressant effect at 450mg builds over 4–6 weeks to full effect — do not judge too early","Regular prescriber check-ins important at this dose — seizure risk monitoring, BP, and CYP2D6 interaction review","If 450mg fails to produce adequate response after 6 weeks: typically time to consider different approach","Never increase beyond 450mg — this is the hard ceiling for safety"],tag:"Trough. Never exceed 450mg."}
+      ]
+    },
+    get zones() { return this.zonesByDose[ST.wellbutrinDose||300] || this.zonesByDose[300]; }
+  },
+  lamictal: {
+    name:'Lamictal 50mg', short:'Lamictal', cls:'l', color:'#40b070', light:'#eefff4',
+    rev:[{lbl:'Want peak concentration at:', off:2, desc:'peak concentration', id:'rv-l1'}],
+    doses: [
+      {mg:25,  label:'25mg',  note:'Starting titration — sub-therapeutic, building tolerance'},
+      {mg:50,  label:'50mg',  note:'Low therapeutic — early stabilization'},
+      {mg:75,  label:'75mg',  note:'Mid-range — meaningful stabilization, sweet spot for many'},
+      {mg:100, label:'100mg', note:'Standard maintenance — full mood stabilizing effect'},
+      {mg:150, label:'150mg', note:'Upper standard — stronger coverage'},
+      {mg:200, label:'200mg', note:'Maximum standard dose'},
+    ],
+    zonesByDose: {
+      25: [
+        {start:0,end:1,label:"Absorbing",power:"—",tl:'#c8f0d8',
+         notes:["25mg is the standard titration start — intentionally sub-therapeutic","98% bioavailability — all 25mg reaches bloodstream unchanged","Sodium channel blocking far below therapeutic threshold at this dose","No mood effects expected — this phase is purely about safety and tolerance","Rash risk highest during escalation — never skip doses and double-up"],tag:"Titration. Safety first, effect comes later."},
+        {start:1,end:4,label:"Peak Blood Level",power:"—",peak:true,tl:'#30a060',
+         notes:["Tmax 1.4–4.8hr — plasma peaks but concentration minimal at 25mg","Sodium channel binding very sparse — well below therapeutic CNS levels","No mood stabilization expected at 25mg — completely normal","Doctor will increase to 50mg after 2 weeks","Some very sensitive individuals may notice a slight calmness — equally likely placebo"],tag:"Blood level peaks — but therapeutic effect near zero."},
+        {start:4,end:18,label:"Low-Level Coverage",power:"—",second:true,tl:'#88d4a8',
+         notes:["Drug present but well below therapeutic plasma range (target: 1–4 mg/L)","No meaningful sodium channel stabilization at 25mg","Half-life 22–37hr — drug accumulates with consistent daily dosing","This accumulation means 50mg will be better tolerated after 2 weeks at 25mg","Goal of 25mg phase: adapt, not treat"],tag:"Building tolerance. Effect comes at higher doses."},
+        {start:18,end:Infinity,label:"Trough / Next Dose",power:"—",tl:'#d4f0dc',
+         notes:["~50% plasma remaining at 24hrs due to long half-life","Consistent same-time dosing critical during titration","Missing doses during titration risks requiring full restart","2 more weeks at 25mg, then increase to 50mg as directed"],tag:"Stay consistent. Titration is the most important phase."}
+      ],
+      50: [
+        {start:0,end:1,label:"Absorbing",power:"—",tl:'#c8f0d8',
+         notes:["Lamotrigine absorbs rapidly — 98% bioavailability, no first-pass metabolism","Works by blocking voltage-gated sodium channels — not dopamine or serotonin","No acute effect — stabilizes neuronal firing rather than exciting it","At 50mg you are beginning to enter the therapeutic plasma range","Effects are cumulative over weeks, not felt dose-by-dose"],tag:"Quietly getting into your system."},
+        {start:1,end:4,label:"Peak Blood Level",power:"—",peak:true,tl:'#30a060',
+         notes:["Plasma peaks 1.4–4.8hr (avg ~2–3hr at 50mg)","Lamotrigine binding to sodium channels throughout brain tissue","Sodium channel stabilization reducing excitatory glutamate/aspartate signaling","At 50mg: early therapeutic range — effects build over weeks","Some notice mild dizziness or visual blurring near peak — normal at 50mg"],tag:"Peak drug level — effects are cumulative not immediate."},
+        {start:4,end:10,label:"Active Stabilization",power:"—",second:true,tl:'#50b880',
+         notes:["Drug well above trough, sodium channels consistently occupied","Neuronal membranes calmer — less glutamate excitatory noise","Mood stabilization is not felt acutely — happens over weeks of sustained exposure","At 50mg: subtle reduction in emotional reactivity may emerge after 2–4 weeks","Mild cognitive side effects (brain fog, word-finding) possible early on — usually clears"],tag:"Stabilization building beneath the surface."},
+        {start:10,end:18,label:"Sustained Coverage",power:"—",third:true,tl:'#88d4a8',
+         notes:["Half-life 22–37hr means substantial drug active through the afternoon","Sodium channel binding maintained continuously","This is the invisible floor Lamictal builds over time","At 50mg many don't feel much day-to-day — full effect typically requires higher doses","Consistency of daily dosing matters more than timing"],tag:"Working in the background, not the foreground."},
+        {start:18,end:24,label:"Trough Approaching",power:"—",tl:'#b0e4c0',
+         notes:["Plasma declining but long half-life means no abrupt drop","Mood protection continues through trough at steady state","Missing a dose is more consequential than timing being slightly off","Some split into 25mg AM / 25mg PM for smoother coverage"],tag:"Next dose will top this back up."},
+        {start:24,end:Infinity,label:"Next Dose Due",power:"—",tl:'#d4f0dc',
+         notes:["At 29hr half-life, ~50% plasma remaining at 24hrs — still active","Lamictal never fully clears between doses at steady state","Take next dose to maintain stable therapeutic levels","Most doctors increase to 75–100mg after stabilizing at 50mg"],tag:"Same time every day."}
+      ],
+      75: [
+        {start:0,end:1,label:"Absorbing",power:"—",tl:'#c8f0d8',
+         notes:["75mg is a real and meaningful clinical dose — not just a step between 50 and 100mg","Often the sweet spot for bipolar II augmentation: real effect, fewer side effects than 100mg","Lamotrigine pharmacokinetics are linear — 75mg produces exactly 1.5× the plasma of 50mg","98% bioavailability — sodium channel blocking begins within 30–60 minutes of absorption"],tag:"75mg — a meaningful mid-range dose."},
+        {start:1,end:4,label:"Peak Blood Level",power:"—",peak:true,tl:'#30a060',
+         notes:["Tmax 1.4–4.8hr — at 75mg, peak plasma ~50% higher than 50mg","Linear pharmacokinetics: 75mg = 1.5× sodium channel density vs 50mg","Sodium channel binding meaningfully more robust than lower doses","Side effects near Tmax slightly more likely than at 50mg — dizziness, visual blur","If consistent peak side effects: split into 37.5mg AM / 37.5mg PM or dose at night"],tag:"50% more coverage than 50mg."},
+        {start:4,end:10,label:"Active Stabilization",power:"—",second:true,tl:'#50b880',
+         notes:["75mg plasma well above the ~1 mg/L proposed therapeutic threshold","Glutamate and aspartate excitatory transmission more substantially blunted than at 50mg","Many bipolar II patients find 75mg the sweet spot — real effect, tolerable side effects","Mood reactivity reduction and emotional steadiness building over weeks of consistent dosing","Brain fog or word-finding issues may persist into weeks 2–4 — usually clears with adaptation"],tag:"Sweet spot for many — real effect, manageable side effects."},
+        {start:10,end:18,label:"Sustained Coverage",power:"—",third:true,tl:'#88d4a8',
+         notes:["Long half-life keeps coverage continuous through the day at 75mg","The mood-stabilizing floor clearly present — neither high nor low","Protection from hypomania and depressive dips building week by week","Energy typically even — no activation, no sedation","Some prescribers dose 75mg at night to avoid any daytime peak effects"],tag:"Steady, even coverage."},
+        {start:18,end:Infinity,label:"Trough / Next Dose",power:"—",tl:'#d4f0dc',
+         notes:["Half-life ~26–30hr — substantial plasma at 24hrs","Trough well above therapeutic threshold at steady state","75mg is a holding dose for some; others eventually increase to 100mg","Consistent timing prevents plasma fluctuations that can affect mood stability"],tag:"Same time every day. Consistency is everything."}
+      ],
+      100: [
+        {start:0,end:1,label:"Absorbing",power:"—",tl:'#c8f0d8',
+         notes:["100mg is the standard target maintenance dose for bipolar disorder","Full therapeutic plasma range (1–4 mg/L) reliably achieved at this dose","Linear pharmacokinetics: exactly 2× the plasma concentration of 50mg","Sodium channel stabilization now at full standard therapeutic intensity"],tag:"Standard therapeutic dose. Full effect territory."},
+        {start:1,end:4,label:"Peak Blood Level",power:"—",peak:true,tl:'#30a060',
+         notes:["Tmax 1.4–4.8hr — peak plasma 1–3 mg/L in most adults at 100mg","Most therapeutically meaningful peak on this drug","Side effects most likely near Tmax: dizziness, diplopia, ataxia, headache","If peak side effects occur: split to 50mg AM / 50mg PM is standard management","Dosing at night lets you sleep through the peak — effective strategy at 100mg"],tag:"Full therapeutic plasma. Side effects most likely near here."},
+        {start:4,end:10,label:"Active Stabilization",power:"—",second:true,tl:'#50b880',
+         notes:["100mg delivers robust sodium channel blockade throughout the day","Glutamate/aspartate excitatory transmission substantially reduced","Mood episode frequency measurably reduced in clinical trials at this dose","Energy fairly flat — no activation, no sedation for most people","Cognitive effects (memory, word-finding) improve after 4–6 weeks of adaptation"],tag:"Full mood stabilization underway."},
+        {start:10,end:18,label:"Sustained Coverage",power:"—",third:true,tl:'#88d4a8',
+         notes:["Half-life ensures near-constant plasma between doses at 100mg","The mood-stabilizing floor fully established by weeks 4–6","Emotional reactivity, irritability, and mood cycling frequency all reduced","100mg is often a long-term maintenance dose — some stay here for years","Lamictal does not cause tolerance at therapeutic doses — effect is sustained"],tag:"The invisible protective floor. Fully established."},
+        {start:18,end:Infinity,label:"Trough / Next Dose",power:"—",tl:'#d4f0dc',
+         notes:["At 29hr half-life, >50% plasma remaining at 24hrs","Trough still within therapeutic range — no withdrawal between doses","Missing one dose: recoverable — do not double up","Missing multiple days: restart titration — never jump back to 100mg after >5 days off","Same time daily is the gold standard for mood stability"],tag:"Consistent dosing protects the floor."}
+      ],
+      150: [
+        {start:0,end:1,label:"Absorbing",power:"—",tl:'#c8f0d8',
+         notes:["150mg is upper-range maintenance — 3× the plasma of 50mg","Typically prescribed after tolerability confirmed at 100mg","Used for bipolar I, treatment-resistant depression augmentation, or inadequate 100mg response","Peak plasma concentration typically 1.5–4.5 mg/L — well into therapeutic zone"],tag:"Upper-range dose. Strong coverage."},
+        {start:1,end:4,label:"Peak Blood Level",power:"—",peak:true,tl:'#30a060',
+         notes:["Tmax 1.4–4.8hr — at 150mg, peak side effects most pronounced","Diplopia, dizziness, headache, nausea — all most likely in this window","If consistent side effects: split to 75mg AM / 75mg PM is standard","Many patients take 150mg at bedtime to sleep through peak effects","Do not increase further without guidance — 200mg is the max standard dose"],tag:"Peak plasma. Most patients dose at night at this level."},
+        {start:4,end:10,label:"Active Stabilization",power:"—",second:true,tl:'#50b880',
+         notes:["150mg: very strong sodium channel stabilization throughout the CNS","Glutamate excitatory transmission substantially suppressed","Mood episode frequency markedly reduced at this dose in clinical data","Mild cognitive blunting possible at 150mg — slower processing, less verbal fluency","Usually improves over months as adaptation occurs"],tag:"Strong, broad stabilization."},
+        {start:10,end:Infinity,label:"Sustained Coverage",power:"—",third:true,tl:'#88d4a8',
+         notes:["Half-life ensures near-constant plasma throughout 24hrs at 150mg","Robust mood-stabilizing floor well-established","Weight typically stable — no metabolic side effects unlike many mood stabilizers","Some patients maintained at 150mg for years with good efficacy","Adjust only with medical guidance"],tag:"Strong sustained coverage."}
+      ],
+      200: [
+        {start:0,end:1,label:"Absorbing",power:"—",tl:'#c8f0d8',
+         notes:["200mg is the maximum standard dose — 4× the plasma of 50mg","FDA-approved maintenance ceiling for bipolar disorder","Peak plasma levels typically 2–6 mg/L — near upper therapeutic range","Some patients on enzyme-inducing drugs (carbamazepine, phenytoin) may need 400mg — specialist only"],tag:"Maximum standard dose."},
+        {start:1,end:4,label:"Peak Blood Level",power:"—",peak:true,tl:'#30a060',
+         notes:["Tmax 1.4–4.8hr — at 200mg, peak side effects most pronounced of any standard dose","Dizziness, diplopia, ataxia, headache, nausea all most likely here","Most patients at 200mg dose at bedtime to sleep through the peak","If taking in the morning: avoid driving until past Tmax window","Never take with alcohol — additive CNS depression at this dose level"],tag:"Peak plasma — most patients dose 200mg at bedtime."},
+        {start:4,end:10,label:"Active Stabilization",power:"—",second:true,tl:'#50b880',
+         notes:["200mg: maximum standard sodium channel blockade","Mood stabilization effect maximal — greatest reduction in episode frequency","Cognitive effects (processing speed, verbal fluency) possible — adaptation over months","200mg is often the endpoint dose for bipolar I — maximally protective at standard range","Regular blood levels not routine but warranted if toxicity symptoms appear"],tag:"Maximum standard protection."},
+        {start:10,end:Infinity,label:"Sustained Coverage",power:"—",third:true,tl:'#88d4a8',
+         notes:["Half-life ensures continuous therapeutic plasma throughout 24hrs at 200mg","Protective mood floor fully maximized","Decades of safety data in epilepsy and bipolar populations at this dose","Annual prescriber check-ins recommended — dose reduction considered if stable for 2+ years","Never stop abruptly — slow taper required to prevent seizure risk"],tag:"Maximum sustained coverage. Never stop abruptly."}
+      ]
+    },
+    get zones() { return this.zonesByDose[ST.lamictalDose||50] || this.zonesByDose[50]; }
+  }
+
+  ,concerta: {
+    name:'Concerta 27mg', short:'Concerta', cls:'c', color:'#e07030', light:'#fff3ee',
+    rev:[{lbl:'Want peak at:', off:7, desc:'Peak Zone', id:'rv-c1'}],
+    zones:[
+      {start:0, end:1, label:"IR Overcoat", power:"2–3 / 10", tl:'#f5d8c0',
+       notes:[
+         "22% of the 27mg dose (≈6mg) is in the outer overcoat — dissolving right now",
+         "This immediate-release layer hits the bloodstream within 30–60 min",
+         "First small plasma peak occurs around 1 hour after dose",
+         "Noticeably gentler onset than Ritalin LA — no sharp initial kick",
+         "OROS doesn't frontload — it's designed to build, not spike",
+         "Appetite suppression may start here before cognitive effects are clear"
+       ], tag:"The primer coat. Just getting started."},
+      {start:1, end:3, label:"Building", power:"4–6 / 10", tl:'#e8b090', third:true,
+       notes:[
+         "IR dose absorbed, osmotic pump now beginning steady release",
+         "Blood levels rising continuously — no plateau, no trough here",
+         "Mild but real improvement in focus and task initiation",
+         "This is where Concerta differs most from Ritalin LA — no valley between peaks",
+         "The ascending curve means you feel better at hour 3 than hour 1",
+         "Some people find mornings slightly slow on Concerta — this is why",
+         "Good for: easing into the day, moderate tasks, not demanding deep work yet"
+       ], tag:"Ascending. The curve keeps climbing."},
+      {start:3, end:6, label:"Ascending Peak", power:"6–8 / 10", tl:'#d87828', third:true,
+       notes:[
+         "OROS osmotic pump delivering methylphenidate continuously and smoothly",
+         "No second surge feeling — just a steady, confident climb",
+         "Focus becoming reliable, working memory noticeably sharper",
+         "Task initiation easier — the prefrontal cortex getting strong signal",
+         "This window often feels smoother than Ritalin LA peaks — less 'edgy'",
+         "Good window for structured work, studying, meetings"
+       ], tag:"Smooth climb. This is Concerta's strength."},
+      {start:6, end:9, label:"True Peak ⭐", power:"8–9 / 10", tl:'#c05a10', peak:true,
+       notes:[
+         "FDA-confirmed mean Tmax of 6.8 ± 1.8 hours — you are at or near peak plasma now",
+         "d-methylphenidate concentration at its highest — dopamine transporter occupancy maximal",
+         "This is Concerta's strongest cognitive window — it arrives late by design",
+         "Deep work, complex problem-solving, and sustained attention most accessible here",
+         "Many people are surprised the best effects come mid-to-late afternoon",
+         "Emotional regulation often noticeably improved in this window",
+         "Heart rate and blood pressure at highest point — expected and normal"
+       ], tag:"This is what you've been building toward all morning."},
+      {start:9, end:11, label:"Plateau", power:"6–7 / 10", tl:'#d88840', second:true,
+       notes:[
+         "Peak passed but methylphenidate still well above therapeutic threshold",
+         "Half-life ~3.5hrs means roughly half the peak concentration still active",
+         "Focus solid and reliable — less sharp than peak, still very usable",
+         "Good for: afternoon tasks, review, writing, structured work",
+         "Better evening coverage than Ritalin LA at equivalent dose",
+         "Smoother decline than most stimulants — Concerta rarely crashes hard"
+       ], tag:"Still strong. Concerta's long tail working for you."},
+      {start:11, end:13, label:"Taper", power:"3–5 / 10", tl:'#e8b880',
+       notes:[
+         "Drug clearing — about 10–12hr total therapeutic window",
+         "Focus requires noticeably more effort now",
+         "Distractibility returning — lighter tasks only",
+         "Some people notice mild rebound irritability or fatigue here",
+         "Better for: review, admin, passive reading, winding down work",
+         "Sleep should be possible if you dosed in the morning — dose timing matters a lot with 12hr meds"
+       ], tag:"Gradual landing."},
+      {start:13, end:Infinity, label:"Baseline", power:"2–3 / 10", tl:'#f5e8dc',
+       notes:[
+         "Methylphenidate essentially cleared from system",
+         "ADHD baseline returning — normal and expected",
+         "Appetite returns, often strongly — eat a proper meal",
+         "Mental fatigue likely after a long active window",
+         "Sleep should be accessible — if not, consider earlier dosing time",
+         "No accumulation day-to-day — each dose starts fresh"
+       ], tag:"Done for the day. Recover well."}
+    ]
+  }
+  ,remeron: {
+    name:'Remeron 7.5mg', short:'Remeron', cls:'rm', color:'#2080c0', light:'#eef5ff',
+    rev:[{lbl:'Want asleep by:', off:0.75, desc:'Peak Sedation', id:'rv-rm1'}],
+    zones:[
+      {start:0, end:0.75, label:"Onset", power:"2–4 / 10", tl:'#b8d8f0',
+       notes:[
+         "Mirtazapine absorbing rapidly — bioavailability ~50% due to first-pass metabolism",
+         "Sedative effects begin within 30 minutes for most people",
+         "H1 histamine blockade activating — this is what causes the sleepiness",
+         "At 7.5mg the antihistamine effect dominates completely — this is the most sedating dose",
+         "Higher doses (15mg+) are paradoxically LESS sedating due to noradrenergic activation offsetting H1 blockade",
+         "Get into bed now — do not fight this window"
+       ], tag:"30 minutes and you should be horizontal."},
+      {start:0.75, end:2, label:"Peak Sedation ⭐", power:"8–10 / 10", tl:'#1060a0', peak:true,
+       notes:[
+         "Plasma concentrations approaching Tmax (~2hr) — deepest sedation window",
+         "H1, 5-HT2A, 5-HT2C, and α1-adrenergic receptor blockade all fully active",
+         "Sleep onset significantly accelerated — typical time to sleep is well under 20 min in this window",
+         "REM sleep suppression begins — mirtazapine shifts sleep architecture toward slow-wave/deep sleep",
+         "This is the core therapeutic window for insomnia — be asleep before it passes",
+         "At 7.5mg: very heavy sedation, strong 'pull' toward sleep, difficult to stay awake",
+         "Do NOT take this dose and then try to do anything requiring coordination or alertness"
+       ], tag:"Peak plasma. This is what 7.5mg is for."},
+      {start:2, end:5, label:"Deep Sleep Window", power:"7–9 / 10", tl:'#1878b8', second:true,
+       notes:[
+         "Mirtazapine plasma levels high and stable — long half-life means slow decline",
+         "Slow-wave (deep) sleep enhanced — physically restorative sleep happening now",
+         "5-HT3 blockade reducing nausea, increasing appetite signaling (why weight gain is common)",
+         "Sleep architecture improved: reduced awakenings, better sleep continuity",
+         "Norepinephrine and serotonin levels gently elevated — antidepressant effects building over weeks",
+         "Do not set an alarm in this window — interrupted sleep here is poor quality recovery"
+       ], tag:"Deep sleep. Don't interrupt it."},
+      {start:5, end:8, label:"Residual Sedation", power:"5–7 / 10", tl:'#4090c8', third:true,
+       notes:[
+         "Half-life 20–40hr means substantial drug still active — especially females (mean 37hr half-life)",
+         "Waking here possible but grogginess likely — the 'Remeron hangover' is real and common at 7.5mg",
+         "Cognitive impairment, slower reaction time, reduced driving ability documented in studies",
+         "Do NOT drive or operate machinery until grogginess fully cleared",
+         "Appetite often noticeably increased this morning — mirtazapine is the most appetite-stimulating antidepressant",
+         "Morning mood often improved — 5-HT1A activity contributing to anxiolytic and antidepressant effect"
+       ], tag:"Groggy but rested. Give it an hour before demanding tasks."},
+      {start:8, end:12, label:"Clearing", power:"3–5 / 10", tl:'#70b0d8',
+       notes:[
+         "Sedation fading but residual drug still well above zero — half-life means ~6-8% cleared per hour",
+         "Cognitive function returning — most people feel reasonably alert by this point",
+         "Tolerance to sedation develops within days to weeks of consistent dosing — morning grogginess improves",
+         "Appetite still elevated — plan meals accordingly if weight management is a concern",
+         "Anxiolytic effects (via 5-HT2C and 5-HT3 blockade) active throughout the day at therapeutic levels",
+         "If next-day sedation is still strong after 1 week, discuss dose or timing adjustment with prescriber"
+       ], tag:"Coming back online. Tolerance builds within days."},
+      {start:12, end:Infinity, label:"Baseline / Pre-dose", power:"2–3 / 10", tl:'#c0ddf0',
+       notes:[
+         "Mirtazapine still present at ~50% plasma concentration due to long half-life — never fully clears between nightly doses",
+         "Steady state reached after 4–5 days of consistent dosing",
+         "Antidepressant and anxiolytic effects are cumulative — built over weeks, not hours",
+         "Appetite stimulation may be present even in this 'low' phase",
+         "Take next dose 30–60 min before target sleep time for best effect",
+         "Consistent same-time dosing important — irregular timing disrupts steady-state levels"
+       ], tag:"Trough. Take next dose before bed."}
+    ]
+  }
+  ,lexapro: {
+    name:'Lexapro 10mg', short:'Lexapro', cls:'lx', color:'#d06820', light:'#fff4ec',
+    rev:[{lbl:'Target steady state at:', off:5, desc:'Plasma peak', id:'rv-lx1'}],
+    zones:[
+      {start:0, end:2, label:"Absorbing", power:"—", tl:'#f5ddc8',
+       notes:[
+         "Escitalopram absorbs rapidly — ~80% bioavailability, Tmax 4–5 hours",
+         "Highly selective serotonin reuptake inhibitor — minimal NE, DA, histamine, or muscarinic activity",
+         "Blocks SERT (serotonin transporter) immediately, but this is the acute pharmacodynamic effect",
+         "The antidepressant effect requires weeks of sustained 5-HT elevation to desensitize autoreceptors",
+         "No acute 'hit' — do not expect to feel anything for days to weeks",
+         "Nausea most likely in first 1–2 weeks as 5-HT3 receptors in the gut activate"
+       ], tag:"Absorbing. This drug works over weeks, not hours."},
+      {start:2, end:6, label:"Peak Plasma ⭐", power:"—", tl:'#d07030', peak:true,
+       notes:[
+         "Tmax 4–5 hours — plasma concentration at daily maximum (FDA label: mean Tmax 5hr ±1.5hr)",
+         "At 10mg steady state: Cmax ~21 ng/mL — well above the SERT saturation threshold",
+         "SERT occupancy is near-maximal even at 10mg — this is why 20mg adds modest additional effect",
+         "The acute plasma peak does NOT correspond to acute mood effect — that is cumulative, not immediate",
+         "Side effects most likely near Tmax: nausea, headache, dry mouth, jitteriness in first 1–2 weeks",
+         "After 1–2 weeks, 5-HT1A autoreceptors begin desensitizing — this is what eventually produces the antidepressant effect"
+       ], tag:"Peak plasma. Effects are cumulative — this peak doesn't feel like a stimulant peak."},
+      {start:6, end:12, label:"Active Coverage", power:"—", tl:'#e09050', second:true,
+       notes:[
+         "Plasma above 50% of Cmax for most of this window — SERT near-fully occupied",
+         "5-HT builds in synapses throughout the day as reuptake is blocked",
+         "At steady state (7–10 days), plasma is 2.2–2.5× single-dose level — higher baseline coverage all day",
+         "Weeks 2–4: 5-HT1A autoreceptors begin desensitizing — synaptic 5-HT can now increase without negative feedback",
+         "Week 3–6: full antidepressant effect usually emerging as downstream receptor changes accumulate",
+         "Anxiety symptoms often improve first (within 1–2 weeks) before full mood elevation"
+       ], tag:"SERT occupied. Serotonin building slowly day by day."},
+      {start:12, end:20, label:"Sustained Serotonin Floor", power:"—", tl:'#e8a870', third:true,
+       notes:[
+         "Half-life 27–32 hours — plasma is still 60–75% of peak even 12 hours after dose",
+         "Unlike stimulants, Lexapro has no trough that 'feels' like wearing off — it's continuous",
+         "Serotonin reuptake blocked steadily throughout the day and night",
+         "At steady state, the drug never fully clears — each dose adds to the existing baseline",
+         "Sleep quality often improves in this window after week 2 — 5-HT1A activity promoting REM normalisation",
+         "Sexual side effects (delayed orgasm, decreased libido) most common complaint at 10mg — typically persistent unless dose reduced"
+       ], tag:"Steady serotonin floor — all day, no peaks, no valleys."},
+      {start:20, end:28, label:"Pre-Dose Trough", power:"—", tl:'#f5c898',
+       notes:[
+         "At 27–32hr half-life, ~40–55% plasma remaining at 24hrs — substantial drug still present",
+         "Lexapro never truly troughs at once-daily dosing — it accumulates to true steady state over 7–10 days",
+         "Antidepressant effect is not lost between doses — it's built into receptor sensitivity changes",
+         "Missing one dose: minor — the long half-life provides a pharmacological buffer",
+         "Missing multiple days: plasma drops meaningfully — discontinuation symptoms (dizziness, electric shocks, irritability) possible after abrupt stop",
+         "Never stop Lexapro abruptly after more than a few weeks — taper as directed"
+       ], tag:"Long half-life buffers the trough. Still active."},
+      {start:28, end:Infinity, label:"Next Dose Due", power:"—", tl:'#fce4cc',
+       notes:[
+         "Take next dose — same time daily preferred for steady plasma",
+         "Lexapro's effects are fully built into synaptic infrastructure after weeks of dosing — not in the acute daily dose",
+         "If feeling flat or anxious, it is not the dose wearing off — it may be the drug is not at full steady state yet",
+         "Full antidepressant effect builds over 4–6 weeks — do not judge efficacy before 4 weeks",
+         "10mg is often the final dose for anxiety disorders — 20mg may be needed for depression",
+         "Common side effects that persist beyond 4 weeks: sexual dysfunction, mild weight gain, emotional blunting — discuss with doctor"
+       ], tag:"Same time daily. Effect is in the weeks, not the hours."}
+    ]
+  }
+};
+
+const ALL = ['ritalin','wellbutrin','lamictal','concerta','remeron','lexapro'];
+
+// Virtual drug key for Wellbutrin + Remeron combo logs
+const COMBO_KEY = 'wellbutrin+remeron';
+const COMBO_DRUG = {
+  name: 'Wellbutrin + Remeron', short: '⚗️ Combo', cls: 'combo', color: '#5060c0', light: '#f0eeff'
+};
+
+function isComboActive() {
+  return ST.active.includes('wellbutrin') && ST.active.includes('remeron')
+    && ST.doses['wellbutrin'] && ST.doses['remeron'];
+}
+
+const phConcerta = [
+  { label:"IR Overcoat",       hours:"0–1 hr",   power:"2–3 / 10" },
+  { label:"Building",          hours:"1–3 hrs",  power:"4–6 / 10", third:true },
+  { label:"Ascending Peak",    hours:"3–6 hrs",  power:"6–8 / 10", third:true },
+  { label:"True Peak ⭐",      hours:"6–9 hrs",  power:"8–9 / 10", peak:true },
+  { label:"Plateau",           hours:"9–11 hrs", power:"6–7 / 10", second:true },
+  { label:"Taper",             hours:"11–13 hrs",power:"3–5 / 10" },
+  { label:"Baseline",          hours:"13+ hrs",  power:"2–3 / 10" },
+];
+
+const phRemeron = [
+  { label:"Onset",              hours:"0–45 min", power:"2–4 / 10" },
+  { label:"Peak Sedation ⭐",   hours:"45m–2 hrs",power:"8–10 / 10", peak:true },
+  { label:"Deep Sleep Window",  hours:"2–5 hrs",  power:"7–9 / 10", second:true },
+  { label:"Residual Sedation",  hours:"5–8 hrs",  power:"5–7 / 10", third:true },
+  { label:"Clearing",           hours:"8–12 hrs", power:"3–5 / 10" },
+  { label:"Baseline / Pre-dose",hours:"12+ hrs",  power:"2–3 / 10" },
+];
+
+
+// ─── SUPABASE ─────────────────────────────────────────────────────────────────
+const SUPA_URL = 'https://jgcanhzxspptcogwoxgn.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpnY2FuaHp4c3BwdGNvZ3dveGduIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwMDk5ODcsImV4cCI6MjA4NzU4NTk4N30.NOruwfSS01F_DubNy3p-ijSlJERZ5-fR5gKldpKGfnA';
+const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+let currentUser = null; // null = guest mode
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let activeDrug = 'ritalin';
+let tickTimer = null;
+
+function loadState() {
+  try { const s = localStorage.getItem('gz2'); if(s) return JSON.parse(s); } catch(e){}
+  return {doses:{}, active:['ritalin','wellbutrin','lamictal','concerta'], dark:false};
+}
+function save() { try { localStorage.setItem('gz2', JSON.stringify(ST)); } catch(e){} }
+
+let ST = loadState();
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+async function init() {
+  if (ST.dark) { document.body.classList.add('dark'); document.getElementById('darkBtn').textContent='☀️'; }
+
+  // Check if returning from magic link click
+  const { data: { session } } = await supa.auth.getSession();
+  if (session) {
+    currentUser = session.user;
+    launchApp();
+  } else {
+    goPage('auth');
+  }
+
+  // Listen for auth changes
+  supa.auth.onAuthStateChange((_event, session) => {
+    if (session && !currentUser) {
+      currentUser = session.user;
+      launchApp();
+    }
+  });
+}
+
+function launchApp() {
+  updateUserPill();
+  loadFromUrl();
+
+  // ── Startup rollover check ──────────────────────────────────────────────────
+  // If the app was closed overnight, the ticker never fired.
+  // Compare today's logical day against the day doses were last set.
+  // If different, silently clear doses before rendering anything.
+  const today = todayKey();
+  if (ST.lastDoseDay && ST.lastDoseDay !== today) {
+    ALL.forEach(k => { delete ST.doses[k]; });
+    ST.lastDoseDay = today;
+    save();
+  }
+  // ───────────────────────────────────────────────────────────────────────────
+
+  buildGrid();
+  buildTabs();
+  setDrug(ST.active[0] || 'ritalin');
+  startTicker();
+  goPage('main');
+}
+
+function continueAsGuest() {
+  currentUser = null;
+  launchApp();
+}
+
+function updateUserPill() {
+  const pill = document.getElementById('userPill');
+  if (!pill) return;
+  if (currentUser) {
+    pill.style.display = 'inline-block';
+    const email = currentUser.email || '';
+    pill.textContent = email.length > 18 ? email.slice(0,15)+'…' : email;
+  } else {
+    pill.style.display = 'none';
+  }
+}
+
+async function handleSignOut() {
+  if (!confirm('Sign out?')) return;
+  await supa.auth.signOut();
+  currentUser = null;
+  ST.logs = [];
+  save();
+  updateUserPill();
+  goPage('auth');
+}
+
+// ─── AUTH ─────────────────────────────────────────────────────────────────────
+let _pendingEmail = '';
+
+async function sendCode() {
+  const email = document.getElementById('authEmail').value.trim();
+  const btn = document.getElementById('authBtn');
+  const msg = document.getElementById('authMsg');
+  if (!email || !email.includes('@')) { msg.textContent = 'Enter a valid email.'; msg.style.color='#e05050'; return; }
+  btn.disabled = true; btn.textContent = 'Sending…';
+  const { error } = await supa.auth.signInWithOtp({
+    email,
+    options: { shouldCreateUser: true }
+    // No emailRedirectTo — this forces Supabase to send OTP code, not magic link
+  });
+  if (error) {
+    msg.textContent = 'Error: ' + error.message; msg.style.color='#e05050';
+    btn.disabled=false; btn.textContent='Track my stats';
+  } else {
+    _pendingEmail = email;
+    document.getElementById('authStep1').style.display = 'none';
+    document.getElementById('authStep2').style.display = 'block';
+    document.getElementById('authCodeEmail').textContent = email;
+    setTimeout(() => document.getElementById('authCode')?.focus(), 100);
+  }
+}
+
+async function verifyCode() {
+  const code = document.getElementById('authCode').value.trim();
+  const btn = document.getElementById('verifyBtn');
+  const msg = document.getElementById('authMsg2');
+  if (!code || code.length < 6) { msg.textContent = 'Enter the 6-digit code.'; msg.style.color='#e05050'; return; }
+  btn.disabled = true; btn.textContent = 'Verifying…';
+  const { data, error } = await supa.auth.verifyOtp({
+    email: _pendingEmail,
+    token: code,
+    type: 'email'
+  });
+  if (error) {
+    msg.textContent = 'Wrong code or expired. Try again or resend.'; msg.style.color='#e05050';
+    btn.disabled=false; btn.textContent='Verify';
+  } else if (data?.session) {
+    currentUser = data.session.user;
+    launchApp();
+  }
+}
+
+async function resendCode() {
+  const msg = document.getElementById('authMsg2');
+  msg.textContent = 'Sending…'; msg.style.color='#888';
+  const { error } = await supa.auth.signInWithOtp({
+    email: _pendingEmail,
+    options: { shouldCreateUser: true }
+  });
+  if (error) { msg.textContent = 'Error: ' + error.message; msg.style.color='#e05050'; }
+  else { msg.textContent = '✓ New code sent!'; msg.style.color='#2a9d4a'; }
+}
+
+function backToEmail() {
+  _pendingEmail = '';
+  document.getElementById('authStep1').style.display = 'block';
+  document.getElementById('authStep2').style.display = 'none';
+  document.getElementById('authMsg').textContent = '';
+  document.getElementById('authBtn').disabled = false;
+  document.getElementById('authBtn').textContent = 'Track my stats';
+}
+
+function goPage(id) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(id==='readme') genShareUrl();
+  if(id==='log') { logDrug=activeDrug; calSelectedDate=null; buildLogTabs(); renderLogStats(); renderLogList(); fetchLogsFromSupabase(); updateLogPageBtn(); }
+  if(id==='main') {
+    // Always rebuild tabs and re-sync activeDrug when returning to dashboard
+    // Covers: coming back from meds page, readme, log, anywhere
+    if(!ST.active.includes(activeDrug)) activeDrug = ST.active[0] || 'ritalin';
+    buildTabs();
+    renderInput();
+    renderAll();
+  }
+}
+
+function togglePage(id) {
+  const current = document.querySelector('.page.active')?.id;
+  if (current === 'page-'+id) goPage('main');
+  else goPage(id);
+}
+
+function toggleDark() {
+  ST.dark = !ST.dark;
+  document.body.classList.toggle('dark', ST.dark);
+  document.getElementById('darkBtn').textContent = ST.dark ? '☀️' : '🌙';
+  save();
+}
+
+// ─── DRUG GRID ────────────────────────────────────────────────────────────────
+function buildGrid() {
+  const g = document.getElementById('drugGrid');
+  g.innerHTML = '';
+  ALL.forEach(k => {
+    const d = DRUGS[k], sel = ST.active.includes(k);
+    const div = document.createElement('div');
+    div.className = `drug-card ${d.cls}${sel?' sel':''}`;
+    div.id = 'dc-'+k;
+    div.onclick = ()=>toggleDrugSel(k);
+    div.innerHTML = `<div class="dcheck" id="dck-${k}" style="color:${d.color};border-color:${sel?d.color:'#ccc'}">${sel?'✓':''}</div>
+      <div><div class="drug-card-name">${d.name}</div>
+      <div class="drug-card-sub">${k==='ritalin'?'Stimulant · Bimodal':k==='wellbutrin'?'NDRI · Long arc':k==='lamictal'?'Mood stabilizer':k==='concerta'?'Stimulant · OROS ascending':k==='remeron'?'NaSSA · Sleep aid':'SSRI · Serotonin'}</div></div>`;
+    g.appendChild(div);
+  });
+}
+
+function toggleDrugSel(k) {
+  const idx = ST.active.indexOf(k);
+  if(idx>=0) { if(ST.active.length===1) return; ST.active.splice(idx,1); }
+  else ST.active.push(k);
+  save(); buildGrid(); buildTabs();
+  if(!ST.active.includes(activeDrug)) setDrug(ST.active[0]);
+  else renderAll();
+}
+
+// ─── TABS ─────────────────────────────────────────────────────────────────────
+function buildTabs() {
+  const bar = document.getElementById('mainTabs');
+  bar.innerHTML = '';
+  ST.active.forEach(k => {
+    const d = DRUGS[k];
+    const b = document.createElement('div');
+    b.className = `tab-btn ${d.cls}${k===activeDrug?' active':''}`;
+    b.id = 'mt-'+k; b.textContent = d.name;
+    b.onclick = ()=>setDrug(k);
+    bar.appendChild(b);
+  });
+}
+
+function setDrug(k) {
+  activeDrug = k;
+  document.querySelectorAll('.tab-btn').forEach(b=>{
+    const bk=b.id.replace('mt-','');
+    b.className=`tab-btn ${DRUGS[bk].cls}${bk===k?' active':''}`;
+  });
+  renderInput();
+  renderAll();
+}
+
+// ─── INPUT ────────────────────────────────────────────────────────────────────
+function renderInput() {
+  const d = DRUGS[activeDrug], saved = ST.doses[activeDrug]||'';
+
+  // Dose selector for drugs that have multi-dose options
+  let doseHtml = '';
+  const doseKey = activeDrug === 'lamictal' ? 'lamictalDose' : activeDrug === 'wellbutrin' ? 'wellbutrinDose' : null;
+  if (doseKey && d.doses) {
+    const curDose = ST[doseKey] || d.doses[1]?.mg || d.doses[0]?.mg;
+    const curDoseObj = d.doses.find(x => x.mg === curDose) || d.doses[0];
+    doseHtml = `<div style="margin-bottom:10px;">
+      <div style="font-size:0.78em;color:#aaa;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:5px;">Dose</div>
+      <div class="dose-selector">
+        ${d.doses.map(dobj => `<button class="dose-btn${dobj.mg===curDose?' sel':''}"
+          style="${dobj.mg===curDose?`border-color:${d.color};background:${d.light};color:${d.color};`:''}"
+          onclick="setDose('${doseKey}',${dobj.mg})">${dobj.label}</button>`).join('')}
+      </div>
+      <div class="dose-note">${curDoseObj?.note||''}</div>
+    </div>`;
+  }
+
+  // Sex selector for Remeron — half-life differs significantly (26hr male vs 37hr female)
+  let sexHtml = '';
+  if (activeDrug === 'remeron') {
+    const sel = ST.sex || null;
+    sexHtml = `<div style="margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <span style="font-size:0.82em;color:#888;">Biological sex <span style="font-size:0.9em;color:#bbb;">(affects half-life)</span>:</span>
+      <div style="display:flex;gap:5px;">
+        <button onclick="setSex('female')" style="padding:4px 12px;border-radius:20px;border:1px solid ${sel==='female'?'#2080c0':'#ccc'};background:${sel==='female'?'#eef5ff':'#f9f9f9'};color:${sel==='female'?'#0050a0':'#888'};font-family:monospace;font-size:0.85em;cursor:pointer;font-weight:${sel==='female'?'bold':'normal'};">Female <span style="font-size:0.8em;opacity:0.7;">~37hr</span></button>
+        <button onclick="setSex('male')" style="padding:4px 12px;border-radius:20px;border:1px solid ${sel==='male'?'#2080c0':'#ccc'};background:${sel==='male'?'#eef5ff':'#f9f9f9'};color:${sel==='male'?'#0050a0':'#888'};font-family:monospace;font-size:0.85em;cursor:pointer;font-weight:${sel==='male'?'bold':'normal'};">Male <span style="font-size:0.8em;opacity:0.7;">~26hr</span></button>
+      </div>
+      ${sel ? `<span style="font-size:0.78em;color:#2080c0;">Half-life ~${sel==='female'?37:26}hr · zones adjusted</span>` : '<span style="font-size:0.78em;color:#bbb;">select to personalize zones</span>'}
+    </div>`;
+  }
+
+  document.getElementById('doseArea').innerHTML =
+    doseHtml + sexHtml +
+    `<label style="font-size:1em;">Dose time (${d.name}):
+      <input type="time" id="dtInput" value="${saved}"
+        style="font-size:1.1em;padding:7px;margin-left:6px;border:1px solid #ccc;border-radius:6px;"
+        oninput="onDose(this.value)">
+    </label>`;
+
+  // Reverse calc — always available, collapsed by default
+  let rh = `<div style="margin-top:10px;border-top:1px solid #eee;padding-top:8px;">
+    <div onclick="toggleRevCalc()" style="cursor:pointer;font-size:0.85em;color:#aaa;user-select:none;display:flex;align-items:center;gap:5px;">
+      <span id="revArrow">▶</span> Reverse calculator
+    </div>
+    <div id="revBody" style="display:none;margin-top:10px;">`;
+
+  d.rev.forEach(r=>{
+    rh += `<div style="margin-bottom:10px;">
+      <div style="font-size:0.88em;color:#666;margin-bottom:4px;">${r.lbl}</div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <input type="time" id="${r.id}-in"
+          style="font-size:1em;padding:7px;border:1px solid #ccc;border-radius:6px;font-family:monospace;"
+          oninput="doRev('${r.id}-in','${r.id}-out',${r.off},'${r.desc}')">
+      </div>
+      <div id="${r.id}-out" class="reverse-result" style="color:${d.color};min-height:18px;margin-top:4px;"></div>
+    </div>`;
+  });
+
+  rh += `</div></div>`;
+  document.getElementById('revArea').innerHTML = rh;
+}
+
+function toggleRevCalc() {
+  const body = document.getElementById('revBody');
+  const arrow = document.getElementById('revArrow');
+  if (!body) return;
+  const open = body.style.display === 'block';
+  body.style.display = open ? 'none' : 'block';
+  arrow.textContent = open ? '▶' : '▼';
+}
+
+function onDose(v) {
+  ST.doses[activeDrug]=v;
+  ST.lastDoseDay = todayKey(); // stamp which logical day these doses belong to
+  save(); renderAll(); renderInput(); genShareUrl();
+}
+
+function setDose(key, mg) {
+  ST[key] = mg;
+  // update drug name display to reflect selected dose
+  if (key === 'lamictalDose') DRUGS.lamictal.name = 'Lamictal ' + mg + 'mg';
+  if (key === 'wellbutrinDose') DRUGS.wellbutrin.name = 'Wellbutrin XL ' + mg + 'mg';
+  save();
+  buildTabs();     // re-render tab labels
+  renderInput();   // re-render dose buttons
+  renderAll();     // re-render zones
+}
+
+function setSex(val) {
+  ST.sex = val; save();
+  renderInput();  // re-render the sex buttons
+  renderAll();    // re-render zones with new half-life
+}
+
+// ─── REVERSE ─────────────────────────────────────────────────────────────────
+function doRev(inId,outId,off,desc) {
+  const val=document.getElementById(inId)?.value, el=document.getElementById(outId);
+  if(!val||!el) return;
+  const [hh,mm]=val.split(':').map(Number);
+  const mins=Math.round(((hh+mm/60-off)%24+24)%24*60);
+  const dh=Math.floor(mins/60),dm=mins%60;
+  const ap=dh>=12?'PM':'AM',h12=dh%12===0?12:dh%12;
+  const th=hh%12===0?12:hh%12,tap=hh>=12?'PM':'AM';
+  el.textContent=`→ Take at ${h12}:${dm.toString().padStart(2,'0')} ${ap} to hit ${desc} around ${th}:${mm.toString().padStart(2,'0')} ${tap}.`;
+}
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+// Convert "HH:MM" 24hr string to "h:MM AM/PM"
+function to12(t) {
+  if (!t) return t;
+  const [hh, mm] = t.split(':').map(Number);
+  const ap = hh >= 12 ? 'PM' : 'AM';
+  const h12 = hh % 12 === 0 ? 12 : hh % 12;
+  return `${h12}:${mm.toString().padStart(2,'0')} ${ap}`;
+}
+
+function fmt(h) {
+  const t=Math.round(h*60),hh=Math.floor(t/60)%24,mm=t%60;
+  const ap=hh>=12?'PM':'AM',h12=hh%12===0?12:hh%12;
+  return `${h12}:${mm.toString().padStart(2,'0')} ${ap}`;
+}
+function nowH() { const n=new Date(); return n.getHours()+n.getMinutes()/60+n.getSeconds()/3600; }
+
+// "Logical day" — rolls over at 3am instead of midnight
+// Returns 'YYYY-MM-DD' string of the day that "owns" this moment
+function appDay(date) {
+  const d = date ? new Date(date) : new Date();
+  // If it's before 3am, it belongs to the previous calendar day
+  if (d.getHours() < 3) d.setDate(d.getDate() - 1);
+  return d.toISOString().slice(0, 10);
+}
+
+// Same as appDay() but returns today's logical day key
+function todayKey() { return appDay(); }
+function bgZ(z) {
+  if(z.peak)   return 'background:#fffacd;border-left:4px solid #f0c000;';
+  if(z.second) return 'background:#e8e8e8;border-left:4px solid #aaa;';
+  if(z.third)  return 'background:#ffe5cc;border-left:4px solid #e8a060;';
+  return 'border-left:3px solid #ccc;';
+}
+function getZone(dose,zones,elapsedOverride) {
+  const e = elapsedOverride !== undefined ? elapsedOverride : ((nowH()-dose)%24+24)%24;
+  return zones.find(z=>e>=z.start&&e<(z.end===Infinity?9999:z.end))||zones[zones.length-1];
+}
+function getZoneForDrug(k) {
+  const v=ST.doses[k]; if(!v) return null;
+  const [hh,mm]=v.split(':').map(Number),dose=hh+mm/60;
+  const {zones}=getEffectiveZones(k);
+  return getZone(dose,zones);
+}
+
+// ─── NOW BANNER ───────────────────────────────────────────────────────────────
+
+// ─── WELLBUTRIN + REMERON INTERACTION ENGINE ──────────────────────────────────
+// Based on: Blier 2010 (46% vs 25% remission), STAR*D, CO-MED, Millan 2000,
+//           De Boer 1995, StatPearls mirtazapine MOA, Stahl bupropion neuropharmacology review
+
+const COMBO_WB_RM = {
+  // How bupropion's active hours interact with remeron's residual at each time of day
+  // Each phase: describes the net effect when both are active simultaneously
+  phases: [
+    {
+      id: 'morning_synergy',
+      title: 'Morning synergy window',
+      // Wellbutrin building (1–5hr post-morning dose), Remeron residual clearing
+      // NE/DA reuptake blocked (bupropion) + α2 still partially blocked (remeron) = elevated NE
+      wellbutrinZones: ['Building', 'Active Buildup', 'First Rise'],
+      remeronZones: ['Residual Sedation', 'Clearing'],
+      ne: 'elevated',     // both drugs push NE up
+      da: 'moderate',     // bupropion blocks DA reuptake
+      serotonin: 'moderate', // remeron α2 het blockade still partially active
+      histamine: 'fading',   // H1 blockade wearing off
+      net: {
+        label: 'Alerting + mood lift',
+        color: '#2060a0',
+        description: `Bupropion's NE/DA reuptake block combines with mirtazapine's residual α2 blockade — NE release elevated from both mechanisms simultaneously. The sedation from last night's Remeron fading as bupropion activates. Most people feel clearer here than on either drug alone.`,
+        feels: ["Mental clarity returning", "Energy starting", "Appetite elevated (remeron still active)", "Mood stabilizing"],
+        watch: ["Some may feel overstimulated if Remeron hangover + Wellbutrin activation clash", "Blood pressure slightly elevated — both raise NE"]
+      }
+    },
+    {
+      id: 'daytime_peak',
+      title: 'Daytime peak combination',
+      // Wellbutrin at peak (5–14hr), Remeron in baseline/trough — mainly bupropion driving
+      // But remeron's cumulative antidepressant effect (weeks) fully active in background
+      wellbutrinZones: ['Peak Zone ⭐', 'Active Plateau'],
+      remeronZones: ['Clearing', 'Baseline / Pre-dose'],
+      ne: 'high',
+      da: 'moderate-high',
+      serotonin: 'background', // remeron's 5-HT1A sensitization built over weeks
+      histamine: 'minimal',
+      net: {
+        label: 'Full activation + stable baseline',
+        color: '#1a7030',
+        description: `This is the combination's peak window. Bupropion at maximum NE/DA effect, mirtazapine providing a stable serotonergic and noradrenergic floor built over weeks. The α2 blockade from last night's remeron has worn off acutely, but the chronic receptor-level changes remain. Research shows this combo achieves 46% remission vs 25% on monotherapy.`,
+        feels: ["Focus and drive strongest", "Mood most stable and elevated", "Appetite suppression from bupropion partially offsetting remeron's appetite increase", "Best window for demanding cognitive work", "Anxiety low (5-HT1A activity from remeron chronic effect)"],
+        watch: ['Avoid second Wellbutrin dose after 3pm — bupropion too activating for sleep', 'Caffeine additive with bupropion — watch blood pressure']
+      }
+    },
+    {
+      id: 'evening_transition',
+      title: 'Evening transition',
+      // Wellbutrin tapering (14–20hr), approaching Remeron dose time
+      // Both drugs at trough — but cumulative antidepressant effect at full steady state
+      wellbutrinZones: ['Taper', 'Back to Baseline'],
+      remeronZones: ['Baseline / Pre-dose'],
+      ne: 'tapering',
+      da: 'tapering',
+      serotonin: 'steady-state', // chronic receptor changes fully in effect
+      histamine: 'minimal',
+      net: {
+        label: 'Steady state — prep for sleep',
+        color: '#7040a0',
+        description: `Both drugs at trough, but their cumulative receptor-level changes are fully established. Weeks of mirtazapine have desensitized 5-HT2A/2C and upregulated 5-HT1A — bupropion's chronic NE elevation has adapted presynaptic tone. The combination at steady state is greater than either drug's acute effect. Take Remeron 30–60min before target sleep.`,
+        feels: ["Energy tapering naturally", "Mood still supported by steady-state effects", "Appetite returning (remeron's chronic 5-HT2C effect still present)", "Good window for winding down"],
+        watch: ["Don't take Remeron too late — this sets up tomorrow's morning grogginess window", "Sleep should come easily — mirtazapine onset about to begin again"]
+      }
+    },
+    {
+      id: 'sleep_phase',
+      title: 'Sleep phase (Remeron active)',
+      // Remeron peaking overnight, Wellbutrin cleared
+      wellbutrinZones: [],
+      remeronZones: ['Onset', 'Peak Sedation ⭐', 'Deep Sleep Window'],
+      ne: 'elevated-acute', // mirtazapine α2 autoreceptor blockade fully active
+      da: 'minimal',        // bupropion cleared
+      serotonin: 'elevated', // α2 het blockade on serotonin terminals
+      histamine: 'blocked',  // H1 maximally blocked — deep sedation
+      net: {
+        label: 'Deep repair sleep',
+        color: '#1060a0',
+        description: `Bupropion fully cleared. Mirtazapine dominating: H1 blockade producing deep sedation, α2 blockade flooding NE and 5-HT, 5-HT2A/2C blockade directing serotonin to 5-HT1A. Slow-wave sleep significantly enhanced — this is where the antidepressant restoration happens. Next morning's bupropion will re-activate onto the receptor landscape mirtazapine has set up overnight.`,
+        feels: ["Deep, restorative sleep", "REM suppressed early — vivid dreams may occur later in night", "Hunger on waking (mirtazapine 5-HT2C/H1 appetite drive)", "May feel groggy until bupropion kicks in"],
+        watch: ["Do not take bupropion at night — mirtazapine and bupropion oppose each other's sedation/activation", "Alcohol greatly amplifies both sedation and seizure risk with this combo — avoid"]
+      }
+    }
+  ]
+};
+
+function getComboPhase(wbZone, rmZone) {
+  // Given current zone labels for each drug, return the matching combo phase
+  if (!wbZone || !rmZone) return null;
+  const wbl = wbZone.label, rml = rmZone.label;
+
+  // Sleep phase: Remeron active in sleep zones
+  if (['Onset','Peak Sedation ⭐','Deep Sleep Window'].includes(rml)) {
+    return COMBO_WB_RM.phases.find(p => p.id === 'sleep_phase');
+  }
+  // Morning synergy: Wellbutrin building + Remeron residual
+  if (['Residual Sedation','Clearing'].includes(rml) && ['Building','Active Buildup','First Rise','Ramp Up'].includes(wbl)) {
+    return COMBO_WB_RM.phases.find(p => p.id === 'morning_synergy');
+  }
+  // Morning synergy even if wellbutrin is at peak
+  if (['Residual Sedation','Clearing'].includes(rml)) {
+    return COMBO_WB_RM.phases.find(p => p.id === 'morning_synergy');
+  }
+  // Evening transition: both winding down
+  if (['Baseline / Pre-dose'].includes(rml) && ['Taper','Back to Baseline'].includes(wbl)) {
+    return COMBO_WB_RM.phases.find(p => p.id === 'evening_transition');
+  }
+  // Evening trough: wellbutrin at peak but remeron in baseline
+  if (['Baseline / Pre-dose'].includes(rml) && ['Peak Zone ⭐','Active Plateau'].includes(wbl)) {
+    return COMBO_WB_RM.phases.find(p => p.id === 'daytime_peak');
+  }
+  // Default to daytime
+  return COMBO_WB_RM.phases.find(p => p.id === 'daytime_peak');
+}
+
+function renderComboPanel(wbDose, rmDose) {
+  if (!wbDose || !rmDose) return '';
+  const now = nowH();
+  const wb = DRUGS.wellbutrin, rm = DRUGS.remeron;
+
+  const wbElap = ((now - (function(){const [h,m]=wbDose.split(':').map(Number);return h+m/60;})())%24+24)%24;
+  const rmElap = ((now - (function(){const [h,m]=rmDose.split(':').map(Number);return h+m/60;})())%24+24)%24;
+
+  const {zones:wbZones} = getEffectiveZones('wellbutrin');
+  const {zones:rmZones} = getEffectiveZones('remeron');
+  const wbZone = getZone((function(){const [h,m]=wbDose.split(':').map(Number);return h+m/60;})(), wbZones);
+  const rmZone = getZone((function(){const [h,m]=rmDose.split(':').map(Number);return h+m/60;})(), rmZones);
+
+  const phase = getComboPhase(wbZone, rmZone);
+  if (!phase) return '';
+
+  const c = phase.net.color;
+  const lightBg = c + '12';
+
+  // NE/DA/5-HT status indicators
+  const ntColor = (level) => {
+    if (level === 'high' || level === 'elevated' || level === 'elevated-acute') return '#2a7a2a';
+    if (level === 'moderate' || level === 'moderate-high') return '#6a8a2a';
+    if (level === 'tapering' || level === 'fading' || level === 'background') return '#a08020';
+    if (level === 'minimal' || level === 'blocked') return '#aaa';
+    return '#888';
+  };
+  const ntLabel = (level) => {
+    const map = {'elevated':'↑↑','elevated-acute':'↑↑↑','high':'↑↑↑','moderate-high':'↑↑','moderate':'↑','background':'~','steady-state':'~','tapering':'↓','fading':'↓','minimal':'—','blocked':'—'};
+    return map[level] || '~';
+  };
+
+  return `
+  <div class="combo-panel" style="background:${lightBg};border-color:${c};">
+    <div style="font-size:0.72em;text-transform:uppercase;letter-spacing:0.07em;color:${c};margin-bottom:10px;font-weight:bold;">⚗️ Combination effect right now</div>
+
+    <!-- equation -->
+    <div class="combo-equation">
+      <div class="combo-drug-pill" style="background:${wb.light};border-color:${wb.color};color:${wb.color};">
+        Wellbutrin<br><span style="font-size:0.85em;font-weight:normal;">${wbZone.label.replace(' ⭐','')}</span>
+      </div>
+      <div class="combo-op">+</div>
+      <div class="combo-drug-pill" style="background:${rm.light};border-color:${rm.color};color:${rm.color};">
+        Remeron<br><span style="font-size:0.85em;font-weight:normal;">${rmZone.label.replace(' ⭐','')}</span>
+      </div>
+      <div class="combo-op">=</div>
+      <div class="combo-result" style="background:${c};color:white;">${phase.net.label}</div>
+    </div>
+
+    <!-- neurotransmitter status -->
+    <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+      <div style="font-size:0.78em;padding:3px 9px;border-radius:10px;background:rgba(0,0,0,0.06);">
+        <span style="color:#888;">NE </span><span style="color:${ntColor(phase.ne)};font-weight:bold;">${ntLabel(phase.ne)}</span>
+      </div>
+      <div style="font-size:0.78em;padding:3px 9px;border-radius:10px;background:rgba(0,0,0,0.06);">
+        <span style="color:#888;">DA </span><span style="color:${ntColor(phase.da)};font-weight:bold;">${ntLabel(phase.da)}</span>
+      </div>
+      <div style="font-size:0.78em;padding:3px 9px;border-radius:10px;background:rgba(0,0,0,0.06);">
+        <span style="color:#888;">5-HT </span><span style="color:${ntColor(phase.serotonin)};font-weight:bold;">${ntLabel(phase.serotonin)}</span>
+      </div>
+      <div style="font-size:0.78em;padding:3px 9px;border-radius:10px;background:rgba(0,0,0,0.06);">
+        <span style="color:#888;">H1 </span><span style="color:${ntColor(phase.histamine)};font-weight:bold;">${ntLabel(phase.histamine)}</span>
+      </div>
+    </div>
+
+    <!-- description -->
+    <div style="font-size:0.85em;color:#444;line-height:1.5;margin-bottom:11px;">${phase.net.description}</div>
+
+    <!-- what it feels like -->
+    <div class="combo-phase-header">What to expect</div>
+    ${phase.net.feels.map(f=>`<div class="combo-row"><div class="combo-row-icon" style="color:${c};">✓</div><div class="combo-row-text">${f}</div></div>`).join('')}
+
+    <!-- watch for -->
+    ${phase.net.watch.length ? `
+    <div class="combo-phase-header">Watch for</div>
+    ${phase.net.watch.map(w=>`<div class="combo-row"><div class="combo-row-icon" style="color:#e07020;">⚠</div><div class="combo-row-text">${w}</div></div>`).join('')}
+    ` : ''}
+
+    <div style="font-size:0.7em;color:#bbb;margin-top:10px;border-top:1px solid rgba(0,0,0,0.08);padding-top:8px;">
+      Based on: Blier 2010 (46% vs 25% remission RCT) · STAR*D · Millan 2000 α2 blockade · Stahl bupropion NE/DA review · CO-MED trial
+    </div>
+  </div>`;
+}
+
+function renderNow() {
+  const ban = document.getElementById('nowBanner');
+  // Show a card for EVERY active drug that has a dose time — not just the current tab
+  const dosed = ST.active.filter(k => ST.doses[k]);
+  if (!dosed.length) { ban.style.display='none'; ban.innerHTML=''; return; }
+
+  const now = nowH();
+  const timeStr = fmt(now);
+
+  let html = `<div style="font-size:0.72em;color:#888;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px;">Right now · ${timeStr}</div>`;
+
+  // If only one drug, render as single wide card (original style)
+  if (dosed.length === 1) {
+    const k = dosed[0], d = DRUGS[k];
+    const [hh,mm] = ST.doses[k].split(':').map(Number), dose = hh+mm/60;
+    const {zones:effZones} = getEffectiveZones(k);
+    const z = getZone(dose, effZones);
+    const elap = ((now-dose)%24+24)%24, mins = Math.round(elap*60);
+    const elStr = mins<60?`${mins}m ago`:`${Math.floor(mins/60)}h ${mins%60}m ago`;
+    const bg = nowCardBg(z, d);
+    html += `<div style="${bg}border-radius:7px;padding:10px 13px;border:1px solid;cursor:pointer;" onclick="setDrug('${k}')">
+      <div style="font-weight:bold;font-size:1.05em;">${d.name} · ${z.label}</div>
+      <div style="font-size:0.88em;color:#555;margin-top:2px;">Dosed ${elStr}${z.power!=='—'?' · '+z.power:''}</div>
+    </div>`;
+  } else {
+    // Multiple drugs — render side by side grid if 2, stacked with compact rows if 3-4
+    const cols = dosed.length === 2 ? '1fr 1fr' : '1fr 1fr';
+    html += `<div style="display:grid;grid-template-columns:${cols};gap:7px;">`;
+    dosed.forEach(k => {
+      const d = DRUGS[k];
+      const [hh,mm] = ST.doses[k].split(':').map(Number), dose = hh+mm/60;
+      const z = getZone(dose, d.zones);
+      const elap = ((now-dose)%24+24)%24, mins = Math.round(elap*60);
+      const elStr = mins<60?`${mins}m ago`:`${Math.floor(mins/60)}h ${mins%60}m ago`;
+      const bg = nowCardBg(z, d);
+      // Mini power bar
+      const powerNum = z.power !== '—' ? parseFloat(z.power.split('/')[0].split('–')[1] || z.power.split('/')[0]) : null;
+      const barW = powerNum ? Math.round((powerNum/10)*100) : 0;
+      html += `<div style="${bg}border-radius:7px;padding:9px 11px;border:1px solid;cursor:pointer;min-width:0;" onclick="setDrug('${k}')">
+        <div style="font-size:0.72em;color:#888;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${d.name}</div>
+        <div style="font-weight:bold;font-size:0.95em;line-height:1.3;margin-bottom:3px;">${z.label.replace(' ⭐','')}</div>
+        ${powerNum ? `<div style="height:4px;background:rgba(0,0,0,0.1);border-radius:2px;margin-bottom:3px;"><div style="height:100%;width:${barW}%;background:${d.color};border-radius:2px;transition:width 0.4s;"></div></div>` : ''}
+        <div style="font-size:0.78em;color:#666;">${elStr}${z.power!=='—'?' · '+z.power:''}</div>
+      </div>`;
+    });
+    html += '</div>';
+    // Wellbutrin + Remeron combo panel
+    if (dosed.includes('wellbutrin') && dosed.includes('remeron')) {
+      html += renderComboPanel(ST.doses.wellbutrin, ST.doses.remeron);
+    }
+  }
+
+  ban.style.display = 'block';
+  ban.style.cssText = 'display:block;margin-bottom:12px;';
+  ban.innerHTML = html;
+}
+
+function nowCardBg(z, d) {
+  if (z.peak)   return 'background:#fffacd;border-color:#f0c000;';
+  if (z.second) return 'background:#e8e8e8;border-color:#aaa;';
+  if (z.third)  return 'background:#ffe5cc;border-color:#e8a060;';
+  return `background:${d.light};border-color:${d.color};`;
+}
+
+// ─── TIMELINE ─────────────────────────────────────────────────────────────────
+function renderTimeline() {
+  const wrap=document.getElementById('tlWrap');
+  const dosed=ST.active.filter(k=>ST.doses[k]);
+  if(!dosed.length){wrap.style.display='none';return;}
+  wrap.style.display='block';
+  if(dosed.length===1) renderSingleTL(dosed[0]);
+  else renderCombinedTL(dosed);
+}
+
+function renderSingleTL(k) {
+  const d=DRUGS[k],[hh,mm]=ST.doses[k].split(':').map(Number),dose=hh+mm/60;
+  const {zones:effZ}=getEffectiveZones(k);
+  const maxH=Math.min(Math.max(...effZ.filter(z=>z.end!==Infinity).map(z=>z.end),12),24);
+  document.getElementById('tlLabel').textContent=`${d.name} · ${maxH}hr window`;
+  const rows=document.getElementById('tlRows');
+  // clear old rows but keep now-line
+  Array.from(rows.children).forEach(c=>{if(c.id!=='tlNow')rows.removeChild(c);});
+  const row=document.createElement('div');
+  row.className='tl-row';
+  effZ.forEach(z=>{
+    if(z.start>=maxH)return;
+    const w=Math.min(z.end===Infinity?maxH:z.end,maxH)-z.start;
+    const seg=document.createElement('div');
+    seg.className='tl-seg';
+    seg.style.cssText=`width:${(w/maxH*100).toFixed(2)}%;background:${z.tl};`;
+    seg.textContent=z.label.replace(' ⭐','');
+    row.appendChild(seg);
+  });
+  rows.insertBefore(row, document.getElementById('tlNow'));
+  posNowLine(dose,maxH,rows.offsetHeight||22);
+  renderTicks(dose,maxH,false);
+}
+
+function renderCombinedTL(dosed) {
+  const totalH=24;
+  document.getElementById('tlLabel').textContent=`${dosed.map(k=>DRUGS[k].short).join(' + ')} · Combined 24hr view`;
+  const rows=document.getElementById('tlRows');
+  Array.from(rows.children).forEach(c=>{if(c.id!=='tlNow')rows.removeChild(c);});
+  dosed.forEach(k=>{
+    const d=DRUGS[k],[hh,mm]=ST.doses[k].split(':').map(Number),dose=hh+mm/60;
+    const row=document.createElement('div');
+    row.className='tl-row';
+    row.style.position='relative';
+    // pre-dose empty
+    if(dose>0){
+      const pre=document.createElement('div');
+      pre.style.cssText=`width:${(dose/totalH*100).toFixed(2)}%;background:#eee;flex-shrink:0;`;
+      row.appendChild(pre);
+    }
+    let used=dose;
+    d.zones.forEach(z=>{
+      const end=z.end===Infinity?totalH:Math.min(dose+z.end,totalH);
+      const w=end-used; if(w<=0)return;
+      const seg=document.createElement('div');
+      seg.className='tl-seg';
+      seg.style.cssText=`width:${(w/totalH*100).toFixed(2)}%;background:${z.tl};flex-shrink:0;`;
+      row.appendChild(seg);
+      used=end;
+    });
+    // label overlay
+    const lbl=document.createElement('div');
+    lbl.style.cssText=`position:absolute;left:3px;top:3px;font-size:0.65em;color:rgba(0,0,0,0.5);pointer-events:none;font-weight:bold;`;
+    lbl.textContent=d.short;
+    row.style.position='relative';
+    row.appendChild(lbl);
+    rows.insertBefore(row, document.getElementById('tlNow'));
+  });
+  const rowH=dosed.length*24;
+  posNowLine(0,totalH,rowH,true);
+  renderTicks(0,totalH,true);
+}
+
+function posNowLine(dose,totalH,rowH,absolute=false) {
+  const nl=document.getElementById('tlNow');
+  const now=nowH();
+  const elapsed=absolute?(now%24):((now-dose+24)%24);
+  if(elapsed>totalH){nl.style.display='none';return;}
+  const pct=(elapsed/totalH*100).toFixed(2);
+  nl.style.display='block';
+  nl.style.left=pct+'%';
+  nl.style.height=(rowH||22)+'px';
+}
+
+function renderTicks(dose,totalH,absolute) {
+  const tc=document.getElementById('tlTicks');
+  tc.innerHTML='';
+  const step=totalH>16?4:totalH>8?2:1;
+  for(let i=0;i<=totalH;i+=step){
+    const h=absolute?i:(dose+i);
+    const span=document.createElement('span');
+    span.style.cssText=`position:absolute;left:${(i/totalH*100).toFixed(2)}%;transform:translateX(-50%);`;
+    span.textContent=fmt(h%24).replace(':00','').replace(' ','');
+    tc.appendChild(span);
+  }
+}
+
+// ─── ZONES ────────────────────────────────────────────────────────────────────
+function renderZones() {
+  const d=DRUGS[activeDrug],v=ST.doses[activeDrug],out=document.getElementById('zonesOut');
+  const {zones, adapted} = getEffectiveZones(activeDrug);
+
+  if(!v){
+    let h=`<div class="section-label">Zones — tap any to expand</div>`;
+    h += adaptiveBannerHTML(activeDrug);
+    zones.forEach(z=>{
+      const uid='z'+Math.random().toString(36).slice(2);
+      const lbl=z.end===Infinity?`${z.start}+ hrs`:`${z.start}–${z.end} hrs`;
+      h+=zoneHTML(uid,`<strong>${lbl}</strong><span style="font-weight:200;"> — ${z.label}</span>`,z,false,adapted);
+    });
+    out.innerHTML=h; return;
+  }
+  const [hh,mm]=v.split(':').map(Number),dose=hh+mm/60;
+  const elap=((nowH()-dose)%24+24)%24;
+  let h=`<div class="section-label">Your schedule today</div>`;
+  h += adaptiveBannerHTML(activeDrug);
+  zones.forEach(z=>{
+    const uid='z'+Math.random().toString(36).slice(2);
+    const s=dose+z.start,e=z.end===Infinity?null:dose+z.end;
+    const tr=e?`${fmt(s)} – ${fmt(e)}`:`${fmt(s)} onward`;
+    const isNow=elap>=z.start&&elap<(z.end===Infinity?9999:z.end);
+    h+=zoneHTML(uid,`<strong>${tr}</strong><span style="font-weight:200;"> — ${z.label}</span>`,z,isNow,adapted);
+  });
+  out.innerHTML=h;
+}
+
+function zoneHTML(uid,titleHTML,z,isNow,adapted=false) {
+  const nowStyle=isNow?'box-shadow:0 0 0 2px rgba(0,0,0,0.18);border-radius:7px;':'';
+  const nowHdrExtra=isNow?'border-left-width:5px !important;':'';
+  return `<div class="zone-row" style="${nowStyle}">
+    <div class="zone-hdr" style="${bgZ(z)}${nowHdrExtra}" onclick="toggleZ('${uid}')">
+      <div style="flex:1;">
+        <div class="zone-title">${titleHTML}</div>
+        ${z.power!=='—'?`<div class="zone-sub">Effect level: ${z.power}</div>`:''}
+        ${isNow?`<div class="you-are-here">← you are here</div>`:''}
+        ${adapted&&z.peak?`<div style="font-size:0.72em;color:#c070e8;margin-top:2px;">👤 calibrated to your data</div>`:''} 
+      </div>
+      <div id="${uid}_a" class="zone-arrow">▼</div>
+    </div>
+    <div id="${uid}" class="zone-body">
+      <ul>${z.notes.map(n=>`<li>${n}</li>`).join('')}</ul>
+      ${z.tag?`<div class="zone-tagline">${z.tag}</div>`:''}
+      ${(()=>{const an=getAdaptiveNote(activeDrug,z.label);return an?`<div class="adaptive-note" style="background:${an.color}18;border-color:${an.color};color:${an.color};">👤 ${an.msg}</div>`:'';})()}
+    </div>
+  </div>`;
+}
+
+function toggleZ(uid) {
+  const el=document.getElementById(uid),ar=document.getElementById(uid+'_a');
+  if(!el)return;
+  const open=el.style.display==='block';
+  el.style.display=open?'none':'block';
+  ar.textContent=open?'▼':'▲';
+}
+
+
+
+// ─── LOG SYSTEM ───────────────────────────────────────────────────────────────
+
+const TAGS = ['focused','foggy','anxious','calm','motivated','crashed','irritable','tired','wired','clear','creative','flat','energized','restless','sluggish','moody','euphoric','low','content','emotional','headache','jittery','scattered','hyperfocused','overthinking','talkative'];
+const TAG_COLORS = {focused:'#c070e8',foggy:'#aaa',anxious:'#e88040',calm:'#50c080',motivated:'#c070e8',crashed:'#e05050',irritable:'#e08050',tired:'#a0a0a0',wired:'#e0c000',clear:'#5577d4',creative:'#c070e8',flat:'#aaa',energized:'#f0a000',restless:'#e07030',sluggish:'#888',moody:'#b060c0',euphoric:'#e040b0',low:'#7090c0',content:'#50b070',emotional:'#d06080',headache:'#c04040',jittery:'#d4a000',scattered:'#a080c0',hyperfocused:'#3070d0',overthinking:'#8060c0',talkative:'#40a0b0'};
+
+let logDrug = 'ritalin';
+let selFeel = null;
+let selTags = [];
+
+// called from log page — temporarily sets activeDrug to logDrug so modal context is correct
+function openLogModalFrom(source) {
+  const prev = activeDrug;
+  activeDrug = logDrug; // use whichever drug tab is active on the log page
+  openLogModal();
+  // restore after modal closes if needed — modal uses activeDrug at save time, which is correct
+}
+
+function updateLogPageBtn() {
+  const btn = document.getElementById('logPageBtn');
+  if (!btn) return;
+  const d = DRUGS[logDrug];
+  btn.style.background = d.light;
+  btn.style.color = d.color;
+  btn.style.border = `1px solid ${d.color}`;
+}
+
+function openLogModal() {
+  const d = DRUGS[activeDrug];
+  const v = ST.doses[activeDrug];
+  selFeel = null; selTags = [];
+
+  // set time to now
+  const n = new Date();
+  const hh = n.getHours().toString().padStart(2,'0');
+  const mm = n.getMinutes().toString().padStart(2,'0');
+  document.getElementById('logTimeInput').value = hh+':'+mm;
+  document.getElementById('logTimeDisplay').textContent = to12(hh+':'+mm.toString().padStart(2,'0'));
+
+  // context line — detect combo state
+  const comboNow = isComboActive() && (activeDrug === 'wellbutrin' || activeDrug === 'remeron');
+  let ctx = '';
+  let modalColor = d.color;
+  let modalLight = d.light;
+
+  if (comboNow) {
+    // Override: log belongs to the combo, not one drug
+    const phase = getComboPhase(
+      getZone((function(){const [h,m]=ST.doses.wellbutrin.split(':').map(Number);return h+m/60;})(),
+        getEffectiveZones('wellbutrin').zones),
+      getZone((function(){const [h,m]=ST.doses.remeron.split(':').map(Number);return h+m/60;})(),
+        getEffectiveZones('remeron').zones)
+    );
+    ctx = `⚗️ Wellbutrin + Remeron · ${phase ? phase.net.label : 'Combo active'}`;
+    modalColor = COMBO_DRUG.color;
+    modalLight = COMBO_DRUG.light;
+  } else if (v) {
+    const [dh,dm] = v.split(':').map(Number), dose=dh+dm/60;
+    const zone = getZone(dose, d.zones);
+    const elap = ((nowH()-dose)%24+24)%24;
+    const mins = Math.round(elap*60);
+    const elStr = mins<60?`${mins}m after dose`:`${Math.floor(mins/60)}h ${mins%60}m after dose`;
+    ctx = `${d.name} · ${elStr} · ${zone.label}`;
+  } else {
+    ctx = `${d.name} · no dose time set`;
+  }
+  document.getElementById('logModalTitle').textContent = 'How are you feeling?';
+  document.getElementById('logModalContext').textContent = ctx;
+  document.getElementById('saveLogBtn').style.background = modalColor;
+
+  // feel scale
+  const fs = document.getElementById('feelScale');
+  fs.innerHTML = '';
+  for (let i=1;i<=10;i++) {
+    const b = document.createElement('div');
+    b.className = 'feel-btn';
+    b.textContent = i;
+    b.onclick = () => { selFeel=i; fs.querySelectorAll('.feel-btn').forEach(x=>x.classList.remove('sel')); b.classList.add('sel'); b.style.borderColor=d.color; b.style.background=d.light; };
+    fs.appendChild(b);
+  }
+
+  // tags
+  const tr = document.getElementById('tagRow');
+  tr.innerHTML = '';
+  TAGS.forEach(t => {
+    const b = document.createElement('div');
+    b.className = 'tag-btn';
+    b.textContent = t;
+    b.onclick = () => {
+      if (selTags.includes(t)) { selTags=selTags.filter(x=>x!==t); b.classList.remove('sel'); b.style.borderColor='#ccc'; b.style.background=''; }
+      else { selTags.push(t); b.classList.add('sel'); b.style.borderColor=TAG_COLORS[t]||d.color; b.style.background='#f5f0ff'; }
+    };
+    tr.appendChild(b);
+  });
+
+  document.getElementById('logNoteInput').value = '';
+  document.getElementById('logModalBg').classList.add('open');
+}
+
+function closeLogModal(e) {
+  if (!e || e.target === document.getElementById('logModalBg')) {
+    document.getElementById('logModalBg').classList.remove('open');
+  }
+}
+
+function saveLog() {
+  if (!selFeel) { alert('Pick a feeling level first (1–10)'); return; }
+  const timeVal = document.getElementById('logTimeInput').value;
+  if (!timeVal) { alert('Set a time for this entry'); return; }
+  const note = document.getElementById('logNoteInput').value.trim();
+  const d = DRUGS[activeDrug];
+  const v = ST.doses[activeDrug];
+  const [lh,lm] = timeVal.split(':').map(Number);
+  const logH = lh+lm/60;
+
+  let zoneName = '—', elapsedH = null;
+  if (v) {
+    const [dh,dm] = v.split(':').map(Number), dose=dh+dm/60;
+    const elap = ((logH-dose)%24+24)%24;
+    elapsedH = elap;
+    zoneName = getZone(dose, d.zones).label;
+  }
+
+  // If both wellbutrin+remeron active, attribute to combo key
+  const savingAsCombo = isComboActive() && (activeDrug === 'wellbutrin' || activeDrug === 'remeron');
+  const saveKey = savingAsCombo ? COMBO_KEY : activeDrug;
+
+  // For combo, compute combo phase as the zone
+  let comboPhase = null;
+  if (savingAsCombo) {
+    comboPhase = getComboPhase(
+      getZone((function(){const [h,m]=ST.doses.wellbutrin.split(':').map(Number);return h+m/60;})(),
+        getEffectiveZones('wellbutrin').zones),
+      getZone((function(){const [h,m]=ST.doses.remeron.split(':').map(Number);return h+m/60;})(),
+        getEffectiveZones('remeron').zones)
+    );
+    // Use wellbutrin elapsed for combo (main daytime drug driving the experience)
+    const wbV = ST.doses.wellbutrin;
+    if (wbV) {
+      const [wbH,wbM] = wbV.split(':').map(Number);
+      const wbDose = wbH+wbM/60;
+      elapsedH = ((logH-wbDose)%24+24)%24;
+      zoneName = comboPhase ? comboPhase.net.label : 'Combo active';
+    }
+  }
+
+  const entry = {
+    id: Date.now(),
+    drug: saveKey,
+    feel: selFeel,
+    tags: [...selTags],
+    note,
+    time: timeVal,
+    doseTime: v||null,
+    elapsedH,
+    zone: zoneName,
+    ts: new Date().toISOString(),
+    combo: savingAsCombo || undefined
+  };
+
+  if (currentUser) {
+    // Save to Supabase
+    supa.from('logs').insert({
+      user_id: currentUser.id,
+      drug: entry.drug,
+      feel: entry.feel,
+      tags: entry.tags,
+      note: entry.note || null,
+      time: entry.time,
+      dose_time: entry.doseTime || null,
+      elapsed_h: entry.elapsedH || null,
+      zone: entry.zone,
+      ts: entry.ts
+    }).then(({error}) => {
+      if (error) console.error('Supabase save error:', error);
+    });
+    // Also cache locally for instant UI
+    if (!ST.logs) ST.logs = [];
+    ST.logs.unshift(entry);
+    save();
+  } else {
+    // Guest mode — localStorage only
+    if (!ST.logs) ST.logs = [];
+    ST.logs.unshift(entry);
+    save();
+  }
+
+  closeLogModal();
+  renderLogBtn();
+  updateAdaptiveNotes();
+  renderAll();
+}
+
+function renderLogBtn() {
+  const wrap = document.getElementById('logBtnWrap');
+  if (!wrap) return;
+  const d = DRUGS[activeDrug];
+  wrap.innerHTML = `<button class="log-btn" style="background:${d.light};color:${d.color};border:1px solid ${d.color};" onclick="openLogModal()">+ Log how I feel right now</button>`;
+}
+
+// ─── LOG PAGE ─────────────────────────────────────────────────────────────────
+
+function goLogPage() {
+  logDrug = activeDrug;
+  goPage('log');
+  buildLogTabs();
+  renderLogStats();
+  renderLogList();
+}
+
+function buildLogTabs() {
+  const bar = document.getElementById('logDrugTabs');
+  bar.innerHTML = '';
+
+  // Regular drug tabs
+  ST.active.forEach(k => {
+    const d = DRUGS[k];
+    const b = document.createElement('div');
+    b.className = `tab-btn ${d.cls}${k===logDrug?' active':''}`;
+    b.textContent = d.name;
+    b.onclick = () => { logDrug=k; calSelectedDate=null; buildLogTabs(); renderLogStats(); renderLogList(); updateLogPageBtn(); };
+    bar.appendChild(b);
+  });
+
+  // Combo tab — show if any combo logs exist
+  const comboLogs = (ST.logs||[]).filter(e=>e.drug===COMBO_KEY);
+  if (comboLogs.length > 0) {
+    const b = document.createElement('div');
+    b.className = `tab-btn combo${logDrug===COMBO_KEY?' active':''}`;
+    b.textContent = '⚗️ Combo';
+    b.onclick = () => { logDrug=COMBO_KEY; calSelectedDate=null; buildLogTabs(); renderLogStats(); renderLogList(); updateLogPageBtn(); };
+    bar.appendChild(b);
+  }
+}
+
+function getLogsForDrug(k) {
+  return (ST.logs||[]).filter(e=>e.drug===k).sort((a,b)=>b.id-a.id);
+}
+
+function getDrugForDisplay(k) {
+  // Returns display drug object for a drug key (handles combo)
+  return k === COMBO_KEY ? COMBO_DRUG : (DRUGS[k] || COMBO_DRUG);
+}
+
+async function fetchLogsFromSupabase() {
+  if (!currentUser) return;
+  const { data, error } = await supa.from('logs')
+    .select('*')
+    .eq('user_id', currentUser.id)
+    .order('ts', { ascending: false });
+  if (error) { console.error('Fetch error:', error); return; }
+  // Map Supabase columns back to local format
+  ST.logs = (data||[]).map(r => ({
+    id: r.id,
+    drug: r.drug,
+    feel: r.feel,
+    tags: r.tags || [],
+    note: r.note || '',
+    time: r.time,
+    doseTime: r.dose_time,
+    elapsedH: r.elapsed_h,
+    zone: r.zone,
+    ts: r.ts
+  }));
+  save();
+  renderLogStats();
+  renderLogList();
+  updateAdaptiveNotes();
+  renderAll();
+}
+
+function renderLogStats() {
+  const logs = getLogsForDrug(logDrug);
+  const el = document.getElementById('logStats');
+  if (!logs.length) { el.innerHTML=''; return; }
+  const d = getDrugForDisplay(logDrug);
+
+  // avg feel per zone
+  const byZone = {};
+  logs.forEach(e => {
+    if (!byZone[e.zone]) byZone[e.zone] = [];
+    byZone[e.zone].push(e.feel);
+  });
+
+  // top tags
+  const tagCount = {};
+  logs.forEach(e=>e.tags.forEach(t=>{tagCount[t]=(tagCount[t]||0)+1;}));
+  const topTags = Object.entries(tagCount).sort((a,b)=>b[1]-a[1]).slice(0,4);
+
+  const avg = logs.reduce((s,e)=>s+e.feel,0)/logs.length;
+
+  el.innerHTML = `<div class="card" style="padding:12px 14px;">
+    <div style="font-size:0.75em;color:#888;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:8px;">${d.name} · ${logs.length} entr${logs.length===1?'y':'ies'}</div>
+    <div style="display:flex;gap:16px;margin-bottom:10px;flex-wrap:wrap;">
+      <div><div style="font-size:1.6em;font-weight:bold;color:${d.color};">${avg.toFixed(1)}</div><div style="font-size:0.75em;color:#888;">avg feeling</div></div>
+      ${topTags.map(([t,c])=>`<div><div style="font-size:1.2em;font-weight:bold;">${c}x</div><div style="font-size:0.75em;color:${TAG_COLORS[t]||'#888'};">${t}</div></div>`).join('')}
+    </div>
+    ${Object.keys(byZone).length>1?`<div style="font-size:0.8em;color:#888;margin-bottom:5px;">Avg feel by zone:</div>
+    <div style="display:flex;gap:4px;flex-wrap:wrap;">
+      ${Object.entries(byZone).map(([z,vals])=>{
+        const a=(vals.reduce((s,v)=>s+v,0)/vals.length).toFixed(1);
+        const w=parseFloat(a)/10;
+        return `<div style="padding:3px 8px;border-radius:12px;font-size:0.78em;background:${d.light};border:1px solid ${d.color};color:${d.color};">${z.replace(' ⭐','')}: <strong>${a}</strong></div>`;
+      }).join('')}
+    </div>`:''}
+  </div>`;
+}
+
+let logView = 'day'; // 'day' or 'cycle'
+let calSelectedDate = null; // 'YYYY-MM-DD' or null = all
+
+function setLogView(v) {
+  logView = v;
+  document.getElementById('viewByDay').style.background = v==='day'?'#f0e8ff':'#f5f5f5';
+  document.getElementById('viewByDay').style.color = v==='day'?'#7a1fa0':'#888';
+  document.getElementById('viewByDay').style.fontWeight = v==='day'?'bold':'normal';
+  document.getElementById('viewByCycle').style.background = v==='cycle'?'#f0e8ff':'#f5f5f5';
+  document.getElementById('viewByCycle').style.color = v==='cycle'?'#7a1fa0':'#888';
+  document.getElementById('viewByCycle').style.fontWeight = v==='cycle'?'bold':'normal';
+  renderLogList();
+}
+
+function getFilteredLogs() {
+  let logs = getLogsForDrug(logDrug);
+  // date filter from calendar
+  if (calSelectedDate) {
+    logs = logs.filter(e => e.ts && appDay(e.ts) === calSelectedDate);
+  }
+  // dropdown filter
+  const f = document.getElementById('logFilter')?.value || 'all';
+  if (f==='high') logs = logs.filter(e=>e.feel>=7);
+  else if (f==='mid') logs = logs.filter(e=>e.feel>=4&&e.feel<=6);
+  else if (f==='low') logs = logs.filter(e=>e.feel<=3);
+  else if (f==='tagged') logs = logs.filter(e=>e.tags&&e.tags.length>0);
+  else if (f==='noted') logs = logs.filter(e=>e.note&&e.note.trim());
+  return logs;
+}
+
+function renderCalendarStrip() {
+  const wrap = document.getElementById('calendarStrip');
+  if (!wrap) return;
+  const allLogs = getLogsForDrug(logDrug);
+  if (!allLogs.length) { wrap.innerHTML=''; return; }
+
+  // Get last 30 days
+  const days = [];
+  const today = new Date();
+  // Adjust today to logical day (before 3am = yesterday)
+  const todayLogical = new Date(today);
+  if (todayLogical.getHours() < 3) todayLogical.setDate(todayLogical.getDate()-1);
+  for (let i=29; i>=0; i--) {
+    const d = new Date(todayLogical);
+    d.setDate(todayLogical.getDate()-i);
+    days.push(d);
+  }
+
+  // Group logs by date
+  const byDate = {};
+  allLogs.forEach(e => {
+    if (!e.ts) return;
+    const dk = appDay(e.ts);
+    if (!byDate[dk]) byDate[dk] = [];
+    byDate[dk].push(e);
+  });
+
+  const drug = DRUGS[logDrug];
+  const dayNames = ['Su','Mo','Tu','We','Th','Fr','Sa'];
+  const todayStr = todayKey();
+
+  let html = '<div class="cal-strip">';
+  days.forEach(d => {
+    const dk = appDay(d);
+    const entries = byDate[dk] || [];
+    const isToday = dk === todayStr;
+    const isSel = dk === calSelectedDate;
+    const avg = entries.length ? (entries.reduce((s,e)=>s+e.feel,0)/entries.length) : null;
+    const dayName = dayNames[d.getDay()];
+    const dayNum = d.getDate();
+    const mon = d.toLocaleDateString('en-US',{month:'short'});
+
+    // dot colors from up to 3 entries
+    const dots = entries.slice(0,3).map(e=>`<div class="cal-dot" style="background:${feelColor(e.feel,'#ccc')};"></div>`).join('');
+
+    html += `<div class="cal-day${isSel?' active':''}${isToday?' today':''}" onclick="calSelectDate('${dk}')">
+      <div class="cal-day-label">${dayName}</div>
+      <div class="cal-day-num">${dayNum}</div>
+      <div class="cal-day-dot">${dots || '<div style="width:6px;height:6px;"></div>'}</div>
+      <div class="cal-day-avg" style="color:${avg?feelColor(avg,'#ccc'):'#ddd'}">${avg?avg.toFixed(1):''}</div>
+    </div>`;
+  });
+  html += '</div>';
+
+  // Show month label if strip spans multiple months
+  html += `<div style="font-size:0.72em;color:#aaa;margin-top:3px;text-align:right;">
+    ${calSelectedDate ? `Showing: ${calSelectedDate} · <span style="cursor:pointer;color:#c070e8;" onclick="calSelectDate(null)">clear</span>` : 'Tap a day to filter · last 30 days'}
+  </div>`;
+  wrap.innerHTML = html;
+
+  // Scroll to today
+  setTimeout(()=>{
+    const strip = wrap.querySelector('.cal-strip');
+    if(strip) strip.scrollLeft = strip.scrollWidth;
+  }, 50);
+}
+
+function calSelectDate(dk) {
+  calSelectedDate = (dk === calSelectedDate) ? null : dk;
+  renderCalendarStrip();
+  renderLogList();
+}
+
+function entryHTML(e, d) {
+  const feel10 = `<span style="color:${feelColor(e.feel,d.color)};">${e.feel}/10</span>`;
+  const elStr = e.elapsedH!=null ? ` · ${e.elapsedH<1?Math.round(e.elapsedH*60)+'m':Math.floor(e.elapsedH)+'h '+Math.round((e.elapsedH%1)*60)+'m'} after dose` : '';
+  return `<div class="log-entry" style="border-left-color:${feelColor(e.feel,d.color)};" id="entry_${e.id}">
+    <div class="log-entry-header">
+      <div style="flex:1;">
+        <div class="log-entry-feel">${feel10} ${moodEmoji(e.feel)}</div>
+        <div class="log-entry-zone">${to12(e.time)}${elStr}</div>
+        <div class="log-entry-zone" style="color:#aaa;">${e.zone.replace(' ⭐','')}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+        <span class="del-log" onclick="deleteLog(${e.id})">✕</span>
+        <span style="font-size:0.72em;color:#bbb;cursor:pointer;border:1px solid #e8e8e8;border-radius:8px;padding:2px 6px;" onclick="openEditTime(${e.id})">✏ time</span>
+      </div>
+    </div>
+    ${e.tags&&e.tags.length?`<div class="log-entry-tags">${e.tags.map(t=>`<span class="log-tag" style="background:${TAG_COLORS[t]}22;color:${TAG_COLORS[t]};">${t}</span>`).join('')}</div>`:''}
+    ${e.note?`<div class="log-entry-note">"${e.note}"</div>`:''}
+    <div id="edittime_${e.id}" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid #f0f0f0;">
+      <div style="font-size:0.8em;color:#888;margin-bottom:5px;">Edit log time — zones will recalculate</div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <input type="time" id="etInput_${e.id}" value="${e.time}"
+          style="font-size:0.95em;padding:5px;border:1px solid #ccc;border-radius:6px;font-family:monospace;">
+        <span style="font-size:0.8em;color:#aaa;" id="etPreview_${e.id}"></span>
+      </div>
+      <div style="display:flex;gap:7px;margin-top:7px;">
+        <button onclick="saveEditTime(${e.id})" style="padding:5px 12px;border-radius:8px;background:${d.color};color:white;border:none;font-size:0.82em;cursor:pointer;">Save</button>
+        <button onclick="closeEditTime(${e.id})" style="padding:5px 10px;border-radius:8px;background:#f0f0f0;color:#888;border:none;font-size:0.82em;cursor:pointer;">Cancel</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderLogList() {
+  renderCalendarStrip();
+  const logs = getFilteredLogs();
+  const list = document.getElementById('logList');
+  const empty = document.getElementById('logEmpty');
+  if (!logs.length) { list.innerHTML=''; empty.style.display='block'; return; }
+  empty.style.display = 'none';
+  const d = getDrugForDisplay(logDrug);
+
+  if (logView === 'cycle') {
+    renderLogByCycle(logs, d, list);
+  } else {
+    renderLogByDay(logs, d, list);
+  }
+}
+
+function renderLogByDay(logs, d, list) {  // d = getDrugForDisplay(logDrug)
+  // Group by date — sort entries within each day newest first
+  const byDate = {};
+  logs.forEach(e => {
+    const dk = e.ts ? appDay(e.ts) : 'unknown';
+    if (!byDate[dk]) byDate[dk] = [];
+    byDate[dk].push(e);
+  });
+
+  // Sort days newest first, cap at 10 days unless a calendar date is selected
+  let sortedDates = Object.keys(byDate).sort((a,b)=>b.localeCompare(a));
+  if (!calSelectedDate) sortedDates = sortedDates.slice(0, 10);
+
+  let html = '';
+
+  sortedDates.forEach((dk, idx) => {
+    // Sort entries within the day newest first by time string
+    const dayEntries = byDate[dk].sort((a,b) => {
+      // Compare by ts if available, fall back to time string
+      if (a.ts && b.ts) return new Date(b.ts) - new Date(a.ts);
+      return (b.time||'').localeCompare(a.time||'');
+    });
+
+    const avg = dayEntries.reduce((s,e)=>s+e.feel,0)/dayEntries.length;
+    const date = new Date(dk+'T12:00:00');
+    const dateLabel = date.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+    const uid = 'dg_'+dk.replace(/-/g,'');
+    const isToday = dk === todayKey();
+    const isOpen = idx < 3; // show most recent 3 days open, rest collapsed
+
+    // Dose schedule for this day
+    let doseSchedule = '';
+    const dosedDrugs = ST.active.filter(k=>ST.doses[k]);
+    if (dosedDrugs.length) {
+      doseSchedule = `<div class="dose-schedule">
+        ${dosedDrugs.map(k=>{
+          const dr=DRUGS[k];
+          return `<span class="dose-pill-badge" style="border-color:${dr.color};color:${dr.color};background:${dr.light};">${dr.short} ${to12(ST.doses[k])}</span>`;
+        }).join('')}
+      </div>`;
+    }
+
+    html += `<div class="day-group">
+      <div class="day-group-header" onclick="toggleDayGroup('${uid}')">
+        <div>
+          <div class="day-group-title">${isToday?'Today — ':''}${dateLabel}</div>
+          <div class="day-group-meta">${dayEntries.length} entr${dayEntries.length===1?'y':'ies'} · avg ${avg.toFixed(1)} ${moodEmoji(Math.round(avg))}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="font-size:1.3em;font-weight:bold;color:${feelColor(avg,d.color)};">${avg.toFixed(1)}</div>
+          <div id="${uid}_arr" class="day-group-arrow">${isOpen?'▼':'▶'}</div>
+        </div>
+      </div>
+      <div id="${uid}" class="day-group-body" style="display:${isOpen?'block':'none'};">
+        ${doseSchedule}
+        ${dayEntries.map(e=>entryHTML(e,d)).join('')}
+      </div>
+    </div>`;
+  });
+
+  // If more than 10 days exist and not filtered, show a note
+  const totalDays = Object.keys(byDate).length;
+  if (!calSelectedDate && totalDays > 10) {
+    html += `<div style="text-align:center;font-size:0.8em;color:#bbb;padding:10px;">
+      Showing 10 most recent days · ${totalDays - 10} older — tap a day in the calendar to view
+    </div>`;
+  }
+
+  list.innerHTML = html;
+}
+
+function renderLogByCycle(logs, d, list) {
+  // Group entries by which zone they were logged in
+  const zoneOrder = d.zones.map(z=>z.label);
+  const byZone = {};
+  logs.forEach(e => {
+    const zk = e.zone || '—';
+    if (!byZone[zk]) byZone[zk] = [];
+    byZone[zk].push(e);
+  });
+
+  // Sort by zone order
+  const sortedZones = Object.keys(byZone).sort((a,b)=>{
+    const ai = zoneOrder.indexOf(a), bi = zoneOrder.indexOf(b);
+    return (ai===-1?99:ai)-(bi===-1?99:bi);
+  });
+
+  let html = '';
+  sortedZones.forEach(zk => {
+    const zEntries = byZone[zk];
+    const avg = zEntries.reduce((s,e)=>s+e.feel,0)/zEntries.length;
+    const zoneData = d.zones.find(z=>z.label===zk);
+    const borderColor = zoneData?.peak?'#f0c000':zoneData?.second?'#aaa':zoneData?.third?'#e8a060':d.color;
+    const uid = 'cg_'+zk.replace(/[^a-z0-9]/gi,'');
+
+    html += `<div class="cycle-group">
+      <div class="cycle-group-header" style="border-color:${borderColor};background:${feelColor(avg,d.color)}18;" onclick="toggleDayGroup('${uid}')">
+        <div>
+          <div class="cycle-group-title">${zk}</div>
+          <div class="cycle-group-meta">${zEntries.length} entr${zEntries.length===1?'y':'ies'} · avg ${avg.toFixed(1)} ${moodEmoji(Math.round(avg))}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="font-size:1.2em;font-weight:bold;color:${feelColor(avg,d.color)};">${avg.toFixed(1)}</div>
+          <div id="${uid}_arr" class="day-group-arrow">▼</div>
+        </div>
+      </div>
+      <div id="${uid}" class="day-group-body" style="display:none;">
+        ${zEntries.map(e=>entryHTML(e,d)).join('')}
+      </div>
+    </div>`;
+  });
+
+  list.innerHTML = html;
+}
+
+function toggleDayGroup(uid) {
+  const el = document.getElementById(uid);
+  const arr = document.getElementById(uid+'_arr');
+  if (!el) return;
+  const open = el.style.display !== 'none';
+  el.style.display = open ? 'none' : 'block';
+  if (arr) arr.textContent = open ? '▼' : '▲';
+}
+
+function deleteLog(id) {
+  if (!confirm('Delete this entry?')) return;
+  ST.logs = (ST.logs||[]).filter(e=>e.id!==id);
+  save();
+  if (currentUser) {
+    supa.from('logs').delete().eq('id', id).eq('user_id', currentUser.id)
+      .then(({error}) => { if(error) console.error('Delete error:', error); });
+  }
+  renderLogStats(); renderLogList(); updateAdaptiveNotes(); renderAll();
+}
+
+function feelColor(f, defaultColor) {
+  if (f>=8) return '#2a9d4a';
+  if (f>=6) return '#88b030';
+  if (f>=4) return '#e0a000';
+  return '#e05050';
+}
+
+function moodEmoji(f) {
+  if (f>=9) return '🔥'; if (f>=7) return '✨'; if (f>=5) return '🙂'; if (f>=3) return '😐'; return '😶';
+}
+
+// ─── ADAPTIVE ZONE NOTES ──────────────────────────────────────────────────────
+
+function updateAdaptiveNotes() {
+  // triggers re-render which picks up adaptive data
+  renderZones();
+}
+
+function getAdaptiveNote(drugKey, zoneName) {
+  const logs = (ST.logs||[]).filter(e=>e.drug===drugKey && e.zone===zoneName && e.elapsedH!=null);
+  if (logs.length < 2) return null;
+  const avg = logs.reduce((s,e)=>s+e.feel,0)/logs.length;
+  const tagCount = {};
+  logs.forEach(e=>e.tags&&e.tags.forEach(t=>{tagCount[t]=(tagCount[t]||0)+1;}));
+  const topTag = Object.entries(tagCount).sort((a,b)=>b[1]-a[1])[0];
+  const d = DRUGS[drugKey];
+  let msg = `Your data (${logs.length} log${logs.length===1?'':'s'}): avg ${avg.toFixed(1)}/10`;
+  if (topTag && topTag[1]>=2) msg += ` · usually <strong style="color:${TAG_COLORS[topTag[0]]||d.color}">${topTag[0]}</strong>`;
+  return {msg, avg, color: feelColor(avg, d.color)};
+}
+
+// ─── ADAPTIVE PEAK CALCULATION ────────────────────────────────────────────────
+const MIN_LOGS_FOR_ADAPT = 6;
+const PHARMACOKINETIC_WEIGHT = 8; // stronger anchor — harder to move away from defaults
+const DECAY = 0.88; // exponential decay per log (newest = 1.0, each older = * 0.88)
+
+// Max shift per drug based on published Tmax variability ranges (±1 SD from literature)
+// Ritalin LA: second peak range 3–10hr (±3.5hr), first peak range 0.5–3hr (±1.25hr)
+// Concerta: Tmax 6.8 ± 1.8hr SD → use ±2hr as realistic individual range
+// Wellbutrin XL: Tmax ~5hr, flagged "highly variable" — use ±2hr
+// Lamictal IR: Tmax 1.4–4.8hr range (±1.7hr) — mood effects much slower, use ±1.5hr
+const DRUG_MAX_SHIFT = {
+  ritalin:   2.0,  // second peak can realistically vary 3–10hr (literature range)
+  concerta:  2.0,  // Tmax 6.8 ± 1.8hr SD from FDA label
+  wellbutrin:2.0,  // explicitly flagged "highly variable" for XL
+  lamictal:  1.5,  // Tmax 1.4–4.8hr, but mood effects are gradual not sharp
+  remeron:   1.5,  // Tmax ~2hr, sedation onset 30min–2hr; long half-life means small shifts matter
+  lexapro:   1.0   // Tmax 4–5hr ±1.5hr SD; effects cumulative so adaptive less meaningful but tracking still useful
+};
+
+function getPersonalCurve(drugKey) {
+  const logs = (ST.logs||[])
+    .filter(e => e.drug===drugKey && e.elapsedH!=null && e.elapsedH >= 0)
+    .sort((a,b) => b.id - a.id); // newest first
+  if (logs.length < MIN_LOGS_FOR_ADAPT) return null;
+
+  const d = DRUGS[drugKey];
+  const baseZones = drugKey === 'remeron' ? getRemeronZones() : d.zones;
+
+  // Find pharmacokinetic default peak center
+  const peakZoneIdx = baseZones.findIndex(z => z.peak);
+  if (peakZoneIdx === -1) return null;
+  const origPeak = baseZones[peakZoneIdx];
+  const origCenter = (origPeak.start + (origPeak.end===Infinity ? origPeak.start+2 : origPeak.end)) / 2;
+
+  // Build smoothed histogram — newer entries weighted higher, older entries decay
+  // Also anchor the histogram with phantom "default" entries so early logs don't overcorrect
+  const bucketSize = 0.2;  // 12-min buckets — better resolution than 0.5hr given 20min minimum shift threshold
+  const maxH = 16;
+  const buckets = {};
+  for (let h=0; h<maxH; h+=bucketSize) {
+    buckets[h.toFixed(1)] = {weightedTotal:0, weight:0};
+  }
+
+  // Phantom anchor entries at default peak — resist drift from sparse data
+  const anchorBucket = (Math.floor(origCenter / bucketSize) * bucketSize).toFixed(1);
+  if (buckets[anchorBucket]) {
+    // Add PHARMACOKINETIC_WEIGHT phantom high-feel entries at the default peak
+    // These act as prior — get outvoted as real data accumulates
+    buckets[anchorBucket].weightedTotal += PHARMACOKINETIC_WEIGHT * 8; // phantom feel=8
+    buckets[anchorBucket].weight += PHARMACOKINETIC_WEIGHT;
+    // Slightly lesser anchors in adjacent buckets for smooth falloff
+    [-bucketSize, bucketSize].forEach(offset => {
+      const adjKey = ((parseFloat(anchorBucket) + offset)).toFixed(1);
+      if (buckets[adjKey]) {
+        buckets[adjKey].weightedTotal += PHARMACOKINETIC_WEIGHT * 0.4 * 7;
+        buckets[adjKey].weight += PHARMACOKINETIC_WEIGHT * 0.4;
+      }
+    });
+  }
+
+  // Add real log entries with exponential decay (newest entries count most)
+  logs.forEach((e, i) => {
+    const w = Math.pow(DECAY, i); // newest = 1.0, oldest = DECAY^(n-1)
+    const bucket = Math.floor(e.elapsedH / bucketSize) * bucketSize;
+    const key = bucket.toFixed(1);
+    if (buckets[key]) {
+      buckets[key].weightedTotal += w * e.feel;
+      buckets[key].weight += w;
+    }
+  });
+
+  // Compute weighted averages per bucket
+  const scored = Object.entries(buckets)
+    .filter(([,v]) => v.weight > 0)
+    .map(([h,v]) => ({ h:parseFloat(h), avg: v.weightedTotal/v.weight, weight: v.weight }))
+    .sort((a,b) => b.avg - a.avg);
+
+  if (!scored.length) return null;
+
+  // Peak centroid from top-scoring buckets (within 85% of best)
+  const topScore = scored[0].avg;
+  const threshold = topScore * 0.85;
+  const peakBuckets = scored.filter(s => s.avg >= threshold);
+  const weightedH = peakBuckets.reduce((s,b) => s + b.h * b.avg, 0) / peakBuckets.reduce((s,b) => s+b.avg, 0);
+
+  const rawShift = weightedH - origCenter;
+
+  // Don't adjust if shift is tiny (< 20 min)
+  if (Math.abs(rawShift) < 0.33) return null;
+
+  // Scale allowed shift by confidence: starts at 25% of max, grows to 100% at 20+ logs
+  const confScale = Math.min(logs.length / 20, 1);
+  const drugMax = DRUG_MAX_SHIFT[drugKey] || 1.5;
+  const maxAllowedShift = drugMax * (0.25 + confScale * 0.75); // 25%→100% of per-drug max
+  const clampedShift = Math.max(-maxAllowedShift, Math.min(maxAllowedShift, rawShift));
+
+  const adjustedZones = baseZones.map(z => {
+    const az = {...z};
+    if (z.label.includes('Baseline') || z.label.includes('Back to') || z.label.includes('Next Dose')) return az;
+    az.start = Math.max(0, parseFloat((z.start + clampedShift).toFixed(1)));
+    az.end = z.end === Infinity ? Infinity : Math.max(az.start + 0.5, parseFloat((z.end + clampedShift).toFixed(1)));
+    return az;
+  });
+
+  for (let i=1; i<adjustedZones.length; i++) {
+    if (adjustedZones[i].end !== Infinity && adjustedZones[i-1].end !== Infinity) {
+      adjustedZones[i].start = adjustedZones[i-1].end;
+    }
+  }
+
+  // Confidence: based on log count + score spread (tight cluster = more confident)
+  const highFeelLogs = logs.filter(e=>e.feel>=7).length;
+  const spreadConfidence = Math.min(logs.length / 12, 1);
+  const dataConfidence = Math.min(highFeelLogs / 5, 1);
+  const confidence = (spreadConfidence * 0.6 + dataConfidence * 0.4);
+
+  return {
+    zones: adjustedZones,
+    shift: clampedShift,
+    rawShift,
+    personalPeakH: weightedH,
+    logCount: logs.length,
+    highFeelLogs,
+    confidence,
+    origCenter
+  };
+}
+
+function getRemeronZones() {
+  // Returns Remeron zones adjusted for biological sex (half-life difference)
+  // Female ~37hr, Male ~26hr — ~40% longer residual for female
+  // Base zones use male as default (conservative — less grogginess)
+  const sex = ST.sex;
+  const base = DRUGS.remeron.zones;
+  if (!sex) return base;
+
+  // Half-life ratio: female 37hr / male 26hr = 1.42
+  // We scale the duration of Residual Sedation and Clearing zones
+  // Onset, Peak Sedation, Deep Sleep mostly unchanged — those are absorption-driven
+  // Residual Sedation: male 5–8hr → female 5–9.5hr
+  // Clearing: male 8–12hr → female 9.5–14hr
+  // Baseline: shifts accordingly
+  if (sex === 'female') {
+    return base.map(z => {
+      if (z.label === 'Residual Sedation') return {...z, start:5, end:9.5,
+        notes: z.notes.map(n => n.replace('37hr half-life)', '37hr half-life — your half-life as female)').replace('Half-life 20–40hr', 'Half-life ~37hr (female)'))};
+      if (z.label === 'Clearing') return {...z, start:9.5, end:14,
+        notes: z.notes.map(n => n.replace('Sedation fading', 'Sedation fading more slowly than average — female half-life ~37hr means slower clearance'))};
+      if (z.label === 'Baseline / Pre-dose') return {...z, start:14};
+      return z;
+    });
+  } else {
+    // Male — slightly tighter than default (default was already male-ish but let's be explicit)
+    return base.map(z => {
+      if (z.label === 'Residual Sedation') return {...z, start:5, end:8,
+        notes: z.notes.map(n => n.replace('37hr half-life)', '26hr half-life — your half-life as male)').replace('Half-life 20–40hr', 'Half-life ~26hr (male)'))};
+      if (z.label === 'Clearing') return {...z, start:8, end:11,
+        notes: z.notes.map(n => n.replace('Sedation fading', 'Sedation fading — male half-life ~26hr means faster clearance than female'))};
+      if (z.label === 'Baseline / Pre-dose') return {...z, start:11};
+      return z;
+    });
+  }
+}
+
+function getEffectiveZones(drugKey) {
+  // For remeron, apply sex-based half-life adjustment first, then adaptive
+  let baseZones = drugKey === 'remeron' ? getRemeronZones() : DRUGS[drugKey].zones;
+
+  if (ST.adaptiveOff && ST.adaptiveOff[drugKey]) return {zones: baseZones, adapted: false};
+  const curve = getPersonalCurve(drugKey);
+  if (!curve) return {zones: baseZones, adapted: false};
+  return {zones: curve.zones, adapted: true, curve};
+}
+
+function resetAdaptive(drugKey) {
+  if (!ST.adaptiveOff) ST.adaptiveOff = {};
+  ST.adaptiveOff[drugKey] = !ST.adaptiveOff[drugKey];
+  save();
+  renderZones();
+  renderNow();
+  renderTimeline();
+}
+
+function adaptiveBannerHTML(drugKey) {
+  const d = DRUGS[drugKey];
+  const logs = (ST.logs||[]).filter(e=>e.drug===drugKey && e.elapsedH!=null);
+  if (logs.length === 0) return '';
+
+  if (logs.length < MIN_LOGS_FOR_ADAPT) {
+    return `<div class="adaptive-peak-banner" style="background:#f9f9f9;border-color:#ddd;color:#999;">
+      👤 <b>${logs.length}/${MIN_LOGS_FOR_ADAPT} feeling entries</b> needed to start calibrating your personal peak
+      <div style="font-size:0.78em;margin-top:3px;color:#bbb;">Based off your feeling entries, zones will slowly shift to match your real experience</div>
+      <div style="height:4px;background:#eee;border-radius:2px;margin-top:6px;"><div style="height:100%;width:${(logs.length/MIN_LOGS_FOR_ADAPT*100).toFixed(0)}%;background:#c070e8;border-radius:2px;transition:width 0.4s;"></div></div>
+    </div>`;
+  }
+
+  const isOff = ST.adaptiveOff && ST.adaptiveOff[drugKey];
+  if (isOff) {
+    return `<div class="adaptive-peak-banner" style="background:#f5f5f5;border-color:#ddd;color:#888;">
+      👤 Personal calibration <b>paused</b> — showing pharmacokinetic defaults
+      <span class="reset-adaptive" onclick="resetAdaptive('${drugKey}')">re-enable</span>
+    </div>`;
+  }
+
+  const {adapted, curve} = getEffectiveZones(drugKey);
+  if (!curve) {
+    // Have enough logs but shift is too small to matter
+    return `<div class="adaptive-peak-banner" style="background:${d.light};border-color:${d.color};color:${d.color};">
+      👤 <b>Based off your ${logs.length} feeling entries</b> — your timing matches the default curve closely
+      <div style="font-size:0.78em;margin-top:2px;color:#aaa;">Keep logging — zones will adjust if a pattern emerges</div>
+    </div>`;
+  }
+
+  const drugMax = DRUG_MAX_SHIFT[drugKey] || 1.5;
+  const drugMaxMin = Math.round(drugMax * 60);
+  const shiftMin = Math.round(Math.abs(curve.shift) * 60);
+  const dir = curve.shift > 0 ? 'later' : 'earlier';
+  const confPct = Math.round(curve.confidence * 100);
+  const stabilizing = curve.logCount < 10 ? ' · still stabilizing' : '';
+
+  const dataDesc = curve.highFeelLogs >= 3
+    ? `${curve.highFeelLogs} high-feel entries confirm this`
+    : `based on ${curve.logCount} entries so far`;
+
+  return `<div class="adaptive-peak-banner" style="background:${d.light};border-color:${d.color};color:${d.color};">
+    👤 <b>Calibrated from your feeling entries</b> — your peak runs ~${shiftMin}min ${dir} than average
+    <div style="font-size:0.8em;margin-top:3px;color:${d.color};opacity:0.8;">${dataDesc} · ${confPct}% confidence${stabilizing} · research shows up to ±${drugMaxMin}min natural variation for this drug</div>
+    <div style="display:flex;align-items:center;gap:6px;margin-top:5px;">
+      <div style="flex:1;height:3px;background:rgba(0,0,0,0.1);border-radius:2px;"><div style="height:100%;width:${confPct}%;background:${d.color};border-radius:2px;transition:width 0.4s;"></div></div>
+      <span class="reset-adaptive" onclick="resetAdaptive('${drugKey}')">reset</span>
+    </div>
+  </div>`;
+}
+
+// ─── EXPORT ───────────────────────────────────────────────────────────────────
+
+function exportLog() {
+  const logs = ST.logs||[];
+  if (!logs.length) { alert('No log entries to export'); return; }
+  const csv = ['date,time,drug,zone,feel,tags,note,elapsed_hrs',
+    ...logs.map(e=>`"${new Date(e.ts).toLocaleDateString()}","${e.time}","${e.drug}","${e.zone}",${e.feel},"${e.tags.join(';')}","${e.note||''}","${e.elapsedH!=null?e.elapsedH.toFixed(2):''}"`)
+  ].join('\n');
+  const blob = new Blob([csv],{type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'grindzone-log.csv';
+  a.click();
+}
+
+
+// ─── RENDER ALL ───────────────────────────────────────────────────────────────
+function renderAll() { renderNow(); renderTimeline(); renderZones(); renderLogBtn(); }
+
+// ─── TICKER ───────────────────────────────────────────────────────────────────
+let _lastAppDay = todayKey();
+
+function startTicker() {
+  if(tickTimer) clearInterval(tickTimer);
+  tickTimer = setInterval(() => {
+    const currentDay = todayKey();
+    if (currentDay !== _lastAppDay) {
+      // Day rolled over at 3am — clear dose times and reset dashboard
+      _lastAppDay = currentDay;
+      onDayRollover();
+    }
+    renderNow();
+    renderTimeline();
+  }, 30000);
+}
+
+function onDayRollover() {
+  // Clear all dose times for the new day
+  ALL.forEach(k => { delete ST.doses[k]; });
+  save();
+  renderInput();
+  renderAll();
+  // Show a subtle banner that the day has reset
+  const ban = document.getElementById('nowBanner');
+  if (ban) {
+    ban.style.display = 'block';
+    ban.style.cssText = 'display:block;margin-bottom:12px;';
+    ban.innerHTML = `<div style="background:#f5f5f5;border:1px solid #ddd;border-radius:8px;padding:10px 13px;color:#888;font-size:0.9em;">
+      🌅 New day — enter today's dose times to start tracking
+    </div>`;
+    setTimeout(() => { if(ban.innerHTML.includes('New day')) renderNow(); }, 8000);
+  }
+}
+
+// ─── SHARE ────────────────────────────────────────────────────────────────────
+function genShareUrl() {
+  const p=new URLSearchParams();
+  ALL.forEach(k=>{if(ST.doses[k])p.set(k,ST.doses[k]);});
+  const base=window.location.href.split('?')[0];
+  const el=document.getElementById('shareUrl');
+  if(el) el.value=p.toString()?`${base}?${p}`:base;
+}
+function copyShare() {
+  const el=document.getElementById('shareUrl'); if(!el)return;
+  navigator.clipboard.writeText(el.value).then(()=>{
+    const c=document.getElementById('copyConfirm');
+    c.style.display='block'; setTimeout(()=>c.style.display='none',2000);
+  });
+}
+function loadFromUrl() {
+  const p=new URLSearchParams(window.location.search); let ch=false;
+  ALL.forEach(k=>{if(p.has(k)){ST.doses[k]=p.get(k);ch=true;}});
+  if(ch){ ST.lastDoseDay = todayKey(); save(); }
+}
+
+init();
+</script>
+</body>
+</html>
